@@ -2,19 +2,24 @@ define(
 [
 	'libs/interact',
 	'Tree',
-	'Definitions'
+	'Definitions',
+	'EventsManager'
 ],
 function (
 	interact,
 	TREE,
-	DEFINITIONS
+	DEFINITIONS,
+	EventsManager
 ){
 	"use strict";
 
 	var VisualNodeOutput = function(id, nodeId){
 		var
 		self = this,
-		container;
+		container,
+		interactable;
+
+		var eventsManager = new EventsManager();
 
 		var init = function() {
 			var spec = DEFINITIONS.data[TREE.data[nodeId].type];
@@ -50,7 +55,7 @@ function (
 
 			var x = 0; 
 			var y = 0; 
-			interact(draggableConnector)
+			interactable = interact(draggableConnector)
 			.draggable({
 				onstart: function (event) {
 					container.classList.add('dragging');
@@ -104,9 +109,17 @@ function (
 		
 		}
 
+		var destroy = function(){
+			eventsManager.destroy();
+			interactable.unset();
+		}
+
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
+		});
+		Object.defineProperty(self, 'destroy', {
+			value: destroy
 		});
 
 		init();

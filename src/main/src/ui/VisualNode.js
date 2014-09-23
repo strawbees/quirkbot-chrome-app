@@ -5,7 +5,8 @@ define(
 	'ui/VisualNodeInput',
 	'ui/VisualNodeOutput',
 	'Definitions',
-	'Tree'
+	'Tree',
+	'EventsManager'
 ],
 function (
 	interact,
@@ -13,19 +14,27 @@ function (
 	VisualNodeInput,
 	VisualNodeOutput,
 	DEFINITIONS,
-	TREE
+	TREE,
+	EventsManager
 ){
 	"use strict";
 
 	var VisualNode = function(id){
 		var
 		self = this,
-		container;
+		container,
+		inputsObjects,
+		output,
+		interactable,
+		destroyed;
+
+		var eventsManager = new EventsManager();
 
 		var init = function() {
 			var treeNode = TREE.data[id];
 			var spec = DEFINITIONS.data[treeNode.type];
 
+			// Container -------------------------------------------------------
 			container = document.createElement('div');
 			container.classList.add('visual-node');
 			container.classList.add(hyphenate(spec.name));
@@ -37,14 +46,19 @@ function (
 				container.classList.add('collection');
 		
 
+			// Draggable Layer -------------------------------------------------
 			var draggableLayer = document.createElement('div');
 			draggableLayer.classList.add('draggable-layer');
 			container.appendChild(draggableLayer);
 
+			// Delete Button ---------------------------------------------------
 			var deleteButton = document.createElement('button');
 			deleteButton.classList.add('delete');
 			deleteButton.innerHTML = '';
 			container.appendChild(deleteButton);
+
+			// Inputs ----------------------------------------------------------
+			inputsObjects = [];
 
 			var inputs = document.createElement('div');
 			inputs.classList.add('inputs');
@@ -57,6 +71,7 @@ function (
 						id,
 						spec.inputs[inputId]
 					);
+					inputsObjects.push(input);
 					inputs.appendChild(input.container);
 				});
 			}
@@ -69,46 +84,50 @@ function (
 					inputs.appendChild(input);
 				});*/
 			}
+			// Title -----------------------------------------------------------
 			var title = document.createElement('h5');
 			title.classList.add('title');
 			title.innerHTML = spec.name;
 			container.appendChild(title);
 
+			// Outputs ---------------------------------------------------------
 			var outputs = document.createElement('div');
 			outputs.classList.add('outputs');
 			container.appendChild(outputs);
 
 			if(spec.out){
-				var output = new VisualNodeOutput(
+				output = new VisualNodeOutput(
 					'out',
 					id
 				);
 				outputs.appendChild(output.container);
 			}
-			// Mouse events
-			container.addEventListener('mouseover', function(){
+			// Mouse events ----------------------------------------------------
+			eventsManager.addEventListener(container, 'mouseover', function(){
 				container.classList.add('focus');
 			})
-			container.addEventListener('mouseout', function(){
+			eventsManager.addEventListener(container, 'mouseout', function(){
 				container.classList.remove('focus');
 			})
-			container.addEventListener('click', function(){
-				moveToFront()
+			eventsManager.addEventListener(container, 'click', function(){
+				moveToFront();
 			})
 
-			// Deleting
-			deleteButton.addEventListener('click', function(){
+			// Deleting --------------------------------------------------------
+			eventsManager.addEventListener(deleteButton, 'click', function(){
 				delete TREE.data[id];
 			});
-			TREE.nodeRemoved.add(function(_id){
+			eventsManager.add(TREE.nodeRemoved, function(_id){
 				if(id != _id) return;
+
+				destroy();
 				container.parentNode.removeChild(container);
 			});
 			
-			// Dragging			
+			// Dragging	--------------------------------------------------------		
 			if(!treeNode.visualX) treeNode.visualX = 0;
 			if(!treeNode.visualY) treeNode.visualY = 0;
-			interact(container)
+			interactable = interact(container)
 			.draggable({
 				onstart:function(event){
 					moveToFront();
@@ -125,7 +144,7 @@ function (
 				endOnly: true,
 				elementRect: { top: 0, left: 0, bottom: 0, right: 0 }
 			});
-			TREE.nodePositionUpdated.add(function(_id, x, y){
+			eventsManager.add(TREE.nodePositionUpdated, function(_id, x, y){
 				if(id != _id) return;
 				
 				container.style.left = x + 'px';
@@ -138,6 +157,15 @@ function (
 			var parentNode = container.parentNode;
 			parentNode.removeChild(container);
 			parentNode.appendChild(container);
+		}
+
+		var destroy = function(){
+			eventsManager.destroy();
+			interactable.unset();
+			inputsObjects.forEach(function(input){
+				input.destroy();
+			});
+			if(output) output.destroy();
 		}
 
 		Object.defineProperty(self, 'container', {

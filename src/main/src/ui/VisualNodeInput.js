@@ -2,19 +2,27 @@ define(
 [
 	'libs/interact',
 	'Tree',
-	'Definitions'
+	'Definitions',
+	'SVGDrawing',
+	'EventsManager'
 ],
 function (
 	interact,
 	TREE,
-	DEFINITIONS
+	DEFINITIONS,
+	SVGDrawing,
+	EventsManager
 ){
 	"use strict";
 
 	var VisualNodeInput = function(id, nodeId, placeholder){
 		var
 		self = this,
-		container;
+		container,
+		interactable,
+		svgLine;
+
+		var eventsManager = new EventsManager();
 
 		var init = function() {
 			var spec = DEFINITIONS.data[TREE.data[nodeId].type];
@@ -36,44 +44,34 @@ function (
 			var inputMirror = document.createElement('div');
 			inputMirror.classList.add('input-mirror');
 			label.appendChild(inputMirror);
-			inputMirror.innerHTML = placeholder;
-					
+			inputMirror.innerHTML = placeholder;	
 
 			var text = document.createElement('div');
 			text.classList.add('text');
 			text.innerHTML = id;
 			label.appendChild(text);
 
+			svgLine = SVGDrawing.svg.line(0, 0, 100, 100).stroke({ width: 1 });
+
 			// Allow for drag and dropping of outputs
-			interact(inputMirror)
+			interactable = interact(inputMirror)
 			.dropzone(true)
 			.on('drop', function (event) {
-				TREE.data[nodeId].inputs[id] =
-					event.relatedTarget.dataset.connectionInfo;
+				setConnectionValue(event.relatedTarget.dataset.connectionInfo);
 			});
 
 			// Monitor text changes in field
-			input.addEventListener('change', function(e){
-				if(!TREE.data[nodeId].inputs){
-					TREE.data[nodeId].inputs = {};
-				}
-
-				if(input.value){
-					TREE.data[nodeId].inputs[id] = input.value;
-				}
-				else{
-					delete TREE.data[nodeId].inputs[id];
-				}
-				
+			eventsManager.addEventListener(input, 'change', function(){
+				setConnectionValue(input.value);
 			});
-			TREE.connectionRemoved.add(function(data){
+			eventsManager.add(TREE.connectionRemoved, function(data){
 				if(data.to != nodeId+'.'+id) return;
 				input.value = '';				
 				inputMirror.innerHTML = placeholder;
 				container.classList.add('placeholder');
 				
 			});
-			TREE.connectionAdded.add(function(data){
+			eventsManager.add(TREE.connectionAdded, function(data){
 				if(data.to != nodeId+'.'+id) return;
 				input.value = data.from;
 				
@@ -89,9 +87,31 @@ function (
 		
 		}
 
+		var setConnectionValue = function(value){
+			if(!TREE.data[nodeId].inputs){
+				TREE.data[nodeId].inputs = {};
+			}
+
+			if(value){
+				TREE.data[nodeId].inputs[id] = value;
+			}
+			else{
+				delete TREE.data[nodeId].inputs[id];
+			}
+		}
+
+		var destroy = function(){
+			interactable.unset();
+			eventsManager.destroy();
+			svgLine.remove();
+		}
+
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
+		});
+		Object.defineProperty(self, 'destroy', {
+			value: destroy
 		});
 
 		init();

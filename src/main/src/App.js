@@ -4,14 +4,16 @@ define(
 	'ui/DefinitionList',
 	'ui/VisualEditor',
 	'Tree',
-	'Definitions'
+	'Definitions',
+	'SVGDrawing'
 ],
 function (
 	BaseApp,
 	DefinitionList,
 	VisualEditor,
 	TREE,
-	DEFINITIONS
+	DEFINITIONS,
+	SVGDrawing
 ){
 	"use strict";
 
@@ -27,7 +29,8 @@ function (
 		self.setup = function(){	
 			self.container.classList.add('loading');
 
-			DEFINITIONS.load(self.container.dataset.indexPath || 'nodes/index.json')
+			DEFINITIONS.load(self.container.dataset.indexPath 
+				|| 'nodes/index.json')
 			.then(function () {
 				self.container.classList.remove('loading');
 				createUI();
@@ -54,6 +57,13 @@ function (
 			//uiCodeEditor = new CodeEditor();
 			//self.container.appendChild(uiCodeEditor.container);
 
+			uiVisualEditor.container.id = 'SVGDrawing';
+			SVGDrawing.init('SVGDrawing');
+
+		}
+
+		self.onResize = function(size){
+			SVGDrawing.resize();
 		}
 
 		var logError = function (error) {
