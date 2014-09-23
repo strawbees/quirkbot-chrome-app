@@ -9,6 +9,11 @@
 @visual-node-min-width: 180px;
 @visual-node-min-height: 120px;
 
+@connector-height: 20px;
+@connector-input-offset: 15px;
+@connector-text-offset: -10px;
+@connector-font-size: 11px;
+
 @visual-editor-bg-color: #727272;
 @visual-node-bg-color: white;
 @visual-node-selected-bg-color: yellow;
@@ -95,12 +100,13 @@ input[type=text]{
 }
 .visual-node{
 	position: absolute;
+	display: table;
 	width: @visual-node-min-width;
 	min-height: @visual-node-min-height;
 
 	background-color: @visual-node-bg-color;
 	border: solid 2px #000;
-	border-radius: 10px;
+	.border-radius(10px);
 
 	&.selected{
 		background-color: @visual-node-selected-bg-color;
@@ -122,60 +128,88 @@ input[type=text]{
 
 	.delete{
 		position: absolute;
-		top: -10px;
-		right: -10px;
-		width: 20px;
-		height: 20px;
+		top: -20px;
+		right: -20px;
+		width: 40px;
+		height: 40px;
+		.border-radius(20px);
 		.appearance(none);
-		border: solid 1px #000;
+		border: solid 3px #000;
 		background-color: #fff;
 		display: none;
 
 	}
 	.title{
-		position: absolute;
 		width: 100%;
-		height: 20px;
-		top: 50%;
-		margin: -10px 0 0 0;
-		padding: 0;
 		text-align: center;
-
+		display: table-cell;
+		vertical-align: middle;
 	}
 
 	.inputs{
-		position: absolute;
-		right: 94%;
-		top: 10px;
+		display: table-cell;
+		vertical-align: middle;
 	}
-
+	.outputs{
+		display: table-cell;
+		vertical-align: middle;
+	}
 }
-.visual-node-input{
-	height: 22px;
-	margin-bottom: 5px;
+.visual-node-input,
+.visual-node-output{
+	height: @connector-height;
 	.label{
-
+		position: relative;
+		display: block;
+		height: 100%;
 		.text{
+			height: 100%;
 			position: absolute;
-			margin-left: 3px;
-			line-height: 22px;
+			line-height: @connector-height;
+			font-size:  @connector-font-size;
 			.placeholder&{
 				color: @input-placeholder-color;
 			}
 		}
 		.input,
 		.input-mirror{
+			height: 100%;
 			.appearance(none);
 			border: solid 1px black;
 			text-align: right;
 			background-color: white;
-			font-size: 13px;
+			font-size:  @connector-font-size;
 			padding: 0;
 			margin: 0;
 			position: absolute;
-			right: 0;
+			top: 0;
 			.box-sizing(border-box);
 			padding: 4px 6px;
+		}
+		
+		.input-mirror{
+			.placeholder&{
+				color: @input-placeholder-color;
+				border-color: @input-placeholder-color;
+			}
+		}
+
+	}
+}
+.visual-node-input{
+	margin-bottom: 5px;
+	&:single-child{
+		margin-bottom: 0;
+	}
+	
+	.label{
+
+		.text{
+			left: @connector-input-offset;
+		}
+		.input,
+		.input-mirror{
+			right: @connector-text-offset;
 		}
 		.input{
 			opacity: 0;
@@ -184,17 +218,25 @@ input[type=text]{
 				opacity: 1;
 			}
 		}
-
 		.input:focus + .input-mirror{
 			display: none;
 		}
+	}
+}
+.visual-node-output{
+	.label{
 
+		.text{
+			right: @connector-input-offset;
+		}
+		.input-mirror{
+			left: @connector-text-offset;
+		}
 		.input-mirror{
 			.placeholder&{
 				color: @input-placeholder-color;
 				border-color: @input-placeholder-color;
 			}
 		}
-
 	}
 }

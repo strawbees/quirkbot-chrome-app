@@ -95,7 +95,6 @@ function (
 						}
 					}
 					for(var connection in data[node].inputs){
-
 						if(!clone[node].inputs) clone[node].inputs = {};
 						if(!clone[node].inputs[connection]){
 							connectionAdded.dispatch({ 

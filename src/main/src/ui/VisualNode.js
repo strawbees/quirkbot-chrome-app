@@ -3,6 +3,7 @@ define(
 	'libs/interact',
 	'happy/_libs/mout/string/hyphenate',
 	'ui/VisualNodeInput',
+	'ui/VisualNodeOutput',
 	'Definitions',
 	'Tree'
 ],
@@ -10,6 +11,7 @@ function (
 	interact,
 	hyphenate,
 	VisualNodeInput,
+	VisualNodeOutput,
 	DEFINITIONS,
 	TREE
 ){
@@ -44,11 +46,6 @@ function (
 			deleteButton.innerHTML = '';
 			container.appendChild(deleteButton);
 
-			var title = document.createElement('h5');
-			title.classList.add('title');
-			title.innerHTML = spec.name;
-			container.appendChild(title);
-
 			var inputs = document.createElement('div');
 			inputs.classList.add('inputs');
 			container.appendChild(inputs);
@@ -72,14 +69,21 @@ function (
 					inputs.appendChild(input);
 				});*/
 			}
-			
+			var title = document.createElement('h5');
+			title.classList.add('title');
+			title.innerHTML = spec.name;
+			container.appendChild(title);
+
+			var outputs = document.createElement('div');
+			outputs.classList.add('outputs');
+			container.appendChild(outputs);
 
 			if(spec.out){
-				var out = document.createElement('div');
-				out.classList.add('out');
-				out.innerHTML = 'out';
-
-				container.appendChild(out);
+				var output = new VisualNodeOutput(
+					'out',
+					id
+				);
+				outputs.appendChild(output.container);
 			}
 			// Mouse events
 			container.addEventListener('mouseover', function(){
@@ -87,6 +91,9 @@ function (
 			})
 			container.addEventListener('mouseout', function(){
 				container.classList.remove('focus');
+			})
+			container.addEventListener('click', function(){
+				moveToFront()
 			})
 
 			// Deleting
@@ -103,6 +110,9 @@ function (
 			if(!treeNode.visualY) treeNode.visualY = 0;
 			interact(container)
 			.draggable({
+				onstart:function(event){
+					moveToFront();
+				},
 				onmove: function (event) {
 					var target = event.target;
 					treeNode.visualX += event.dx;
@@ -121,26 +131,13 @@ function (
 				container.style.left = x + 'px';
 				container.style.top = y + 'px';
 
-				// Move to front
-				var parentNode = container.parentNode;
-				parentNode.removeChild(container);
-				parentNode.appendChild(container);
 			})
-			// Dragging using browser native
-			/*if(!treeNode.visualX) treeNode.visualX = 0;
-			if(!treeNode.visualY) treeNode.visualY = 0;
-			container.draggable = true;	
-			container.addEventListener('dragstart', function(e){
- 				 e.dataTransfer.setData('text/plain', id);
- 				 e.dataTransfer.effectAllowed = 'move';
-			});
-			container.addEventListener('dragend', function(e){
-				treeNode.visualX += e.offsetX;
-				treeNode.visualY += e.offsetY - container.offsetHeight;
+		}
 
-				if(treeNode.visualX < 0) treeNode.visualX = 0;
-				if(treeNode.visualY < 0) treeNode.visualY = 0;
-			})*/
+		var moveToFront = function(){
+			var parentNode = container.parentNode;
+			parentNode.removeChild(container);
+			parentNode.appendChild(container);
 		}
 
 		Object.defineProperty(self, 'container', {

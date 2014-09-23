@@ -1,9 +1,11 @@
 define(
 [
+	'libs/interact',
 	'Tree',
 	'Definitions'
 ],
 function (
+	interact,
 	TREE,
 	DEFINITIONS
 ){
@@ -12,9 +14,7 @@ function (
 	var VisualNodeInput = function(id, nodeId, placeholder){
 		var
 		self = this,
-		container,
-		nodes,
-		selected;
+		container;
 
 		var init = function() {
 			var spec = DEFINITIONS.data[TREE.data[nodeId].type];
@@ -43,14 +43,35 @@ function (
 			text.classList.add('text');
 			text.innerHTML = id;
 			label.appendChild(text);
-			
+
+			// Allow for drag and dropping of outputs
+			interact(inputMirror)
+			.dropzone(true)
+			.on('drop', function (event) {
+				TREE.data[nodeId].inputs[id] =
+					event.relatedTarget.dataset.connectionInfo;
+			});
+
+			// Monitor text changes in field
 			input.addEventListener('change', function(e){
 				if(!TREE.data[nodeId].inputs){
 					TREE.data[nodeId].inputs = {};
 				}
 
-				TREE.data[nodeId].inputs[id] = input.value;
-				console.log(input.value)
+				if(input.value){
+					TREE.data[nodeId].inputs[id] = input.value;
+				}
+				else{
+					delete TREE.data[nodeId].inputs[id];
+				}
+				
+			});
+			TREE.connectionRemoved.add(function(data){
+				if(data.to != nodeId+'.'+id) return;
+				input.value = '';				
+				inputMirror.innerHTML = placeholder;
+				container.classList.add('placeholder');
+				
 			});
 			TREE.connectionAdded.add(function(data){
 				if(data.to != nodeId+'.'+id) return;
