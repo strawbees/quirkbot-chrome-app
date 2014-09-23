@@ -1,0 +1,10 @@
+{
+	"name": "Gate",
+	"icon" : "",
+	"in" : true,
+	"out" : true,
+	"collection" : false,
+	"inputs" : {
+		"in" : 0
+	}
+}

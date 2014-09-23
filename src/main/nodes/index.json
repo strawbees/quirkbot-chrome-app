@@ -1,0 +1,6 @@
+{
+	"Gate" : "nodes/Gate.json",
+	"SerialMonitor" : "nodes/SerialMonitor.json",
+	"ServoMotor" : "nodes/ServoMotor.json",
+	"Sonar" : "nodes/Sonar.json"	
+}

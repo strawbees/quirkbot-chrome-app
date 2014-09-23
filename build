@@ -1,0 +1,44 @@
+#!/bin/bash
+
+SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $SRC_DIR
+
+if [ -z $1 ]
+	then
+		echo "No project specified. Defaulting to 'main'."
+		TARGET=main
+	else
+		TARGET="$1"		
+fi
+
+
+# copy folder to dist
+rm -r dist/${TARGET}
+cp -r src/${TARGET} dist/${TARGET}
+
+# clear src
+rm -r dist/${TARGET}/src/
+mkdir dist/${TARGET}/src/
+
+# copy dummy-content
+rm -r dist/dummy-content
+cp -r dummy-content dist/dummy-content
+
+# temporally add Almond to the source
+cp node_modules/almond/almond.js src/${TARGET}/src/almond.js
+
+# optimize js
+node node_modules/requirejs/bin/r.js -o baseUrl=src/${TARGET}/src name=almond include=main out=dist/${TARGET}/${TARGET}.js paths.happy=../../../node_modules/happy-toolkit optimizeCss=default preserveLicenseComments=false
+
+
+# optimize css
+node node_modules/requirejs/bin/r.js -o cssIn=src/${TARGET}/src/style.css out=dist/${TARGET}/${TARGET}.css optimizeCss=default preserveLicenseComments=false
+
+file=$(cat dist/$TARGET/index.html)
+
+echo "${file//<!--happy-->*<!--\/happy-->/<link rel="stylesheet" href="${TARGET}.css">
+		<script src="${TARGET}.js"></script>}" >>  dist/$TARGET/.temp
+
+rm dist/$TARGET/index.html
+mv dist/$TARGET/.temp dist/$TARGET/index.html
+rm src/${TARGET}/src/almond.js

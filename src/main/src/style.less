@@ -1,0 +1,200 @@
+@import "vendor.less";
+@import "reset.css";
+
+// Variables -------------------------------------------------------------------
+@font-family: monospace;
+@input-letter-width: 10;
+@input-letter-height: 10;
+
+@visual-node-min-width: 180px;
+@visual-node-min-height: 120px;
+
+@visual-editor-bg-color: #727272;
+@visual-node-bg-color: white;
+@visual-node-selected-bg-color: yellow;
+@visual-node-focus-bg-color:yellow;
+@input-placeholder-color: #999;
+
+// Hack to expose css variables to javascript
+#cssdata{
+	display: none !important;
+	font-family: '{"input-letter-width":@{input-letter-width},"input-letter-height":@{input-letter-height}}';
+}
+// General ---------------------------------------------------------------------
+body{
+	padding: 0;
+	margin: 0;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	font-family: @font-family;
+}
+input[type=text]{
+	font-family: @font-family;
+}
+.loading{
+	background-color: red;
+}
+
+// Definition List -------------------------------------------------------------
+.definition-list{
+	background-color: yellow; 
+	position: absolute;
+	top:0;
+	left: 0;
+	width: 15%;
+	min-height: 100%;
+}
+.definition-item{
+	position: relative;
+	height: 20px;
+
+	&.expanded{
+		height: auto;
+
+		.description{
+			display: block;
+		}
+	}
+	.title,
+	.description{
+		width: 90%;
+		padding-left: 20px;
+	}
+
+	.title{
+		margin: 0;
+	}
+	
+	.description{
+		display: none;
+	}
+
+	.toggle{
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	.insert{
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 10%;
+		height: 100%;
+	}
+}
+// Visual Editor ---------------------------------------------------------------
+.visual-editor{
+	background-color: @visual-editor-bg-color; 
+	position: absolute;
+	top:0;
+	left: 15%;
+	width: 85%;
+	min-height: 100%;
+}
+.visual-node{
+	position: absolute;
+	width: @visual-node-min-width;
+	min-height: @visual-node-min-height;
+
+	background-color: @visual-node-bg-color;
+	border: solid 2px #000;
+	border-radius: 10px;
+
+	&.selected{
+		background-color: @visual-node-selected-bg-color;
+	}
+	&.focus{
+		background-color: @visual-node-focus-bg-color;
+		.delete{
+			display: block;
+		}
+	}
+	.draggable-layer{
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		//background-color: red;
+	}
+
+	.delete{
+		position: absolute;
+		top: -10px;
+		right: -10px;
+		width: 20px;
+		height: 20px;
+		.appearance(none);
+		border: solid 1px #000;
+		background-color: #fff;
+		display: none;
+
+	}
+	.title{
+		position: absolute;
+		width: 100%;
+		height: 20px;
+		top: 50%;
+		margin: -10px 0 0 0;
+		padding: 0;
+		text-align: center;
+
+	}
+
+	.inputs{
+		position: absolute;
+		right: 94%;
+		top: 10px;
+	}
+
+}
+.visual-node-input{
+	height: 22px;
+	margin-bottom: 5px;
+	.label{
+
+		.text{
+			position: absolute;
+			margin-left: 3px;
+			line-height: 22px;
+			.placeholder&{
+				color: @input-placeholder-color;
+			}
+		}
+		.input,
+		.input-mirror{
+			.appearance(none);
+			border: solid 1px black;
+			text-align: right;
+			background-color: white;
+			font-size: 13px;
+			padding: 0;
+			margin: 0;
+			position: absolute;
+			right: 0;
+			.box-sizing(border-box);
+			padding: 4px 6px;
+		}
+		.input{
+			opacity: 0;
+			width: 100px;
+			&:focus {
+				opacity: 1;
+			}
+		}
+
+		.input:focus + .input-mirror{
+			display: none;
+		}
+
+		.input-mirror{
+			.placeholder&{
+				color: @input-placeholder-color;
+				border-color: @input-placeholder-color;
+			}
+		}
+
+	}
+}
