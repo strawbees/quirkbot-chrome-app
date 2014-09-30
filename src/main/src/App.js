@@ -1,29 +1,23 @@
 define(
 [
 	'happy/app/BaseApp',
-	'ui/DefinitionList',
-	'ui/VisualEditor',
 	'Tree',
 	'Definitions',
-	'SVGDrawing'
+	'SVGDrawing',
+	'UI'
 ],
 function (
 	BaseApp,
-	DefinitionList,
-	VisualEditor,
 	TREE,
 	DEFINITIONS,
-	SVGDrawing
+	SVGDrawing,
+	UI
 ){
 	"use strict";
 
 	var App = function(){
 		var 
-		self = this,
-		uiMenu,
-		uiDefinitions,
-		uiVisualEditor,
-		uiCodeEditor;
+		self = this;
 
 	
 		self.setup = function(){	
@@ -45,25 +39,20 @@ function (
 		}
 
 		var createUI = function(){
-			//uiMenu = new Menu();
-			//self.container.appendChild(uiMenu.container);
+			UI.init();
 
-			uiDefinitions = new DefinitionList();
-			self.container.appendChild(uiDefinitions.container);
+			self.container.appendChild(UI.definitionList.container);
+			self.container.appendChild(UI.visualEditor.container);
 
-			uiVisualEditor = new VisualEditor();
-			self.container.appendChild(uiVisualEditor.container);
-
-			//uiCodeEditor = new CodeEditor();
-			//self.container.appendChild(uiCodeEditor.container);
-
-			uiVisualEditor.container.id = 'SVGDrawing';
-			SVGDrawing.init('SVGDrawing');
+			SVGDrawing.init(UI.visualEditor.container);
 
 		}
 
 		self.onResize = function(size){
 			SVGDrawing.resize();
+		}
+		self.update = function(){
+			SVGDrawing.update();
 		}
 
 		var logError = function (error) {

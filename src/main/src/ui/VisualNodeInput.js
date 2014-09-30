@@ -1,26 +1,33 @@
 define(
 [
+	'require',
+	'happy/utils/DOM',
 	'libs/interact',
 	'Tree',
 	'Definitions',
 	'SVGDrawing',
-	'EventsManager'
+	'EventsManager',
 ],
 function (
+	require,
+	DOM,
 	interact,
 	TREE,
 	DEFINITIONS,
 	SVGDrawing,
 	EventsManager
 ){
+
 	"use strict";
 
-	var VisualNodeInput = function(id, nodeId, placeholder){
+	var dom = new DOM();
+
+	var VisualNodeInput = function(id, nodeId, placeholder, visualNode){
 		var
 		self = this,
 		container,
 		interactable,
-		svgLine;
+		line;
 
 		var eventsManager = new EventsManager();
 
@@ -51,7 +58,8 @@ function (
 			text.innerHTML = id;
 			label.appendChild(text);
 
-			svgLine = SVGDrawing.svg.line(0, 0, 100, 100).stroke({ width: 1 });
+			// Create the line that will be drawn between connectors
+			line = SVGDrawing.two.makeLine(0, 0, 0, 0);
 
 			// Allow for drag and dropping of outputs
 			interactable = interact(inputMirror)
@@ -69,6 +77,7 @@ function (
 				input.value = '';				
 				inputMirror.innerHTML = placeholder;
 				container.classList.add('placeholder');
+				drawLine(0,0,0,0);
 				
 			});
 			eventsManager.add(TREE.connectionAdded, function(data){
@@ -80,8 +89,47 @@ function (
 					container.classList.add('placeholder');
 				}
 				else{
-					inputMirror.innerHTML = data.from;
+					// Check if incomming connectin belongs to a node
+					var fromArray = data.from.split('.');
+					if(fromArray.length == 2
+						&& TREE.data[fromArray[0]]
+						&& fromArray[1] == 'out'
+						&& DEFINITIONS.data[TREE.data[fromArray[0]].type].out
+
+					){
+			
+						var editorPosition =
+							dom.calculatePosition(visualNode.editor.container);
+						
+						var inputPosition =
+							dom.calculatePosition(container);
+						var outputPosition =
+							dom.calculatePosition(
+								visualNode.editor.nodes[fromArray[0]].output.container
+							);
+
+						var inputX = inputPosition.x - editorPosition.x;
+						var inputY = inputPosition.y - editorPosition.y;
+
+						var outputX = outputPosition.x - editorPosition.x;
+						var outputY = outputPosition.y - editorPosition.y;
+
+						drawLine(outputX, outputY, inputX, inputY);
+	
+
+						inputMirror.innerHTML = data.from;
+						container.classList.add('connected-to-output');
+					}
+					else{
+						drawLine(0,0,0,0);
+
+						inputMirror.innerHTML = data.from;
+						container.classList.remove('connected-to-output');
+						
+					}
 					container.classList.remove('placeholder');
+
+					
 				}
 			});
 		
@@ -100,10 +148,17 @@ function (
 			}
 		}
 
+		var drawLine = function(x1,y1,x2,y2){
+			line.vertices[0].x = x1;
+			line.vertices[0].y = y1;
+			line.vertices[1].x = x2;
+			line.vertices[1].y = y2;
+		}
+
 		var destroy = function(){
 			interactable.unset();
 			eventsManager.destroy();
-			svgLine.remove();
+			line.remove();
 		}
 
 

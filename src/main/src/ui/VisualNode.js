@@ -19,7 +19,7 @@ function (
 ){
 	"use strict";
 
-	var VisualNode = function(id){
+	var VisualNode = function(id, editor){
 		var
 		self = this,
 		container,
@@ -69,7 +69,8 @@ function (
 					var input = new VisualNodeInput(
 						inputId,
 						id,
-						spec.inputs[inputId]
+						spec.inputs[inputId],
+						self
 					);
 					inputsObjects.push(input);
 					inputs.appendChild(input.container);
@@ -98,7 +99,8 @@ function (
 			if(spec.out){
 				output = new VisualNodeOutput(
 					'out',
-					id
+					id,
+					self
 				);
 				outputs.appendChild(output.container);
 			}
@@ -108,9 +110,6 @@ function (
 			})
 			eventsManager.addEventListener(container, 'mouseout', function(){
 				container.classList.remove('focus');
-			})
-			eventsManager.addEventListener(container, 'click', function(){
-				moveToFront();
 			})
 
 			// Deleting --------------------------------------------------------
@@ -144,6 +143,8 @@ function (
 				endOnly: true,
 				elementRect: { top: 0, left: 0, bottom: 0, right: 0 }
 			});
+
+			// On position updated ---------------------------------------------
 			eventsManager.add(TREE.nodePositionUpdated, function(_id, x, y){
 				if(id != _id) return;
 				
@@ -170,6 +171,15 @@ function (
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
+		});
+		Object.defineProperty(self, 'editor', {
+			get: function(){ return editor; }
+		});
+		Object.defineProperty(self, 'inputs', {
+			get: function(){ return inputs; }
+		});
+		Object.defineProperty(self, 'output', {
+			get: function(){ return output; }
 		});
 
 		init();

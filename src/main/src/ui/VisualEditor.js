@@ -34,22 +34,22 @@ function (
 			nodes = {};
 
 			TREE.nodeAdded.add(onNodeAdded);
-			//TREE.nodeRemoved.add(onNodeRemoved);
-			/*tree.connectionAdded.add(function (value) {
-				console.log('connectionAdded', value)
-			});
-			tree.connectionRemoved.add(function (value) {
-				console.log('connectionRemoved', value)
-			});*/
+			TREE.nodeRemoved.add(onNodeRemoved);
 		}
 
 		var onNodeAdded = function(id){
-			var node = new VisualNode(id);
-			container.appendChild(node.container);
+			nodes[id] = new VisualNode(id, self);
+			container.appendChild(nodes[id].container);
+		}
+		var onNodeRemoved = function(id){
+			delete nodes[id];
 		}
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
+		});
+		Object.defineProperty(self, 'nodes', {
+			get: function(){ return nodes; }
 		});
 
 		init();

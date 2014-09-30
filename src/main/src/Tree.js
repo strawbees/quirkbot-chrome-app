@@ -45,37 +45,23 @@ function (
 			requestAnimationFrame(update)
 			
 			for(var node in data){
-				if(
-					typeof(data[node]) === 'undefined'
-					|| (
-						typeof(data[node]) !== 'undefined'
-						&& !data[node]
-					)
-				){
+				if( typeof(data[node]) === 'undefined' || !data[node] ){
 					delete data[node];
 					continue;
 				}
 
-				if(!clone[node]){
-
+				// A new node has been created
+				if(!clone[node]){ 
 					nodeAdded.dispatch(node);
 					nodePositionUpdated.dispatch(
 						node,
 						data[node].visualX,
 						data[node].visualY
 					);
-
-					for(var connection in data[node].inputs){
-
-						connectionAdded.dispatch({ 
-							to: node + '.' + connection, 
-							from: data[node].inputs[connection]
-						});
-					}
 				}
 				else{
-					if(data[node].visualX 
-						!= clone[node].visualX
+					// The node position has been updated
+					if(data[node].visualX != clone[node].visualX
 						|| data[node].visualY != clone[node].visualY){
 						nodePositionUpdated.dispatch(
 							node,
@@ -83,17 +69,53 @@ function (
 							data[node].visualY
 						);
 					}
-
+				}
+			}
+			for(var node in clone){
+				if( typeof(clone[node]) === 'undefined' || !clone[node] ){
+					delete clone[node];
+					continue;
+				}
+				// A node has been removed...
+				if(!data[node]){
+					//... so every connection from it's inputs is also
 					for(var connection in clone[node].inputs){
+						connectionRemoved.dispatch({ 
+							to: node + '.' + connection, 
+							from: clone[node].inputs[connection]
+						});
+					}
 
-						if(!data[node].inputs) data[node].inputs = {};
-						if(!data[node].inputs[connection]){
-							connectionRemoved.dispatch({ 
-								to: node + '.' + connection, 
-								from: clone[node].inputs[connection]
-							});
+					// Check if the node output was connected to any input
+					for(var _node in data){
+						for(var connection in data[_node].inputs){
+							var from = data[_node].inputs[connection];
+							if(from	== node + '.out'){
+								delete  data[_node].inputs[connection];
+								connectionRemoved.dispatch({ 
+									to: _node + '.' + connection, 
+									from: node + '.out'
+								});
+							}
 						}
 					}
+					nodeRemoved.dispatch(node);
+				}
+			}
+
+			for(var node in data){
+					
+				if(!clone[node]){
+					for(var connection in data[node].inputs){
+						connectionAdded.dispatch({ 
+							to: node + '.' + connection, 
+							from: data[node].inputs[connection]
+						});
+					}
+				}
+				else{
+
+					
 					for(var connection in data[node].inputs){
 						if(!clone[node].inputs) clone[node].inputs = {};
 						if(!clone[node].inputs[connection]){
@@ -101,6 +123,7 @@ function (
 								to: node + '.' + connection, 
 								from: data[node].inputs[connection]
 							});
+
 						}
 						else {
 							if(JSON.stringify(clone[node].inputs[connection])
@@ -115,28 +138,17 @@ function (
 								});
 							}
 						}
+
 					}
-				}
-			}
-			for(var node in clone){
-				if(
-					typeof(clone[node]) === 'undefined'
-					|| (
-						typeof(clone[node]) !== 'undefined' 
-						&& !clone[node]
-					)
-				){
-					delete clone[node];
-					continue;
-				}
-				if(!data[node]){
 					for(var connection in clone[node].inputs){
-						connectionRemoved.dispatch({ 
-							to: node + '.' + connection, 
-							from: clone[node].inputs[connection]
-						});
+						if(!data[node].inputs) data[node].inputs = {};
+						if(!data[node].inputs[connection]){
+							connectionRemoved.dispatch({ 
+								to: node + '.' + connection, 
+								from: clone[node].inputs[connection]
+							});
+						}
 					}
-					nodeRemoved.dispatch(node);
 				}
 			}
 			clone = JSON.parse(JSON.stringify(data));

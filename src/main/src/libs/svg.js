@@ -1,15 +1,9 @@
-/* svg.js 1.0.1-3-g6b0c1d2 - svg selector inventor polyfill regex default color array pointarray patharray number viewbox bbox rbox element parent container fx relative event defs group arrange mask clip gradient pattern doc shape symbol use rect ellipse line poly path image text textpath nested hyperlink marker sugar set data memory loader helpers - svgjs.com/license */
-;(function(root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define(factory);
-  } else if (typeof exports === 'object') {
-    module.exports = factory();
-  } else {
-    root.SVG = factory();
-  }
-}(this, function() {
+define(
+[ 
+],
+function() {
 
-  var SVG = this.SVG = function(element) {
+  var SVG =function(element) {
     if (SVG.supported) {
       element = new SVG.Doc(element)
   
@@ -3888,5 +3882,5 @@
             function (c) { window.setTimeout(c, 1000 / 60) }
   })()
 
-  return SVG
-}));
+  return SVG;
+});

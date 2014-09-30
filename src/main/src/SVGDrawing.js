@@ -1,10 +1,10 @@
 define(
 [
-	'libs/svg',
+	'libs/two',
 	'happy/utils/DOM'
 ],
 function (
-	SVG,
+	Two,
 	DOM
 ){
 	"use strict";
@@ -13,21 +13,30 @@ function (
 
 	var SvgDrawing = function(){
 		var self = this,
-		svg,
+		two,
 		element;
 
-		var init = function(domElementId){
-			element = document.getElementById(domElementId);
+		var init = function(_element){
+			element = _element;
 			var size = dom.measure(element);
-			svg = SVG(domElementId).size(size.width, size.height);
+			two = new Two({ 
+				width: size.width, 
+				height: size.height 
+			});
+			two.appendTo(element);
+			
 		}
 		var resize = function(){
 			if(!element) return;
 			var size = dom.measure(element);
-			svg.size(size.width, size.height);
+
+			two.width = size.width;
+			two.height = size.height;
+			update();
 		}
-		var getSvg =  function(){
-			return svg;
+		var update = function(){
+			if(!two) return;
+			two.update();
 		}
 
 		Object.defineProperty(self, 'init', {
@@ -36,8 +45,11 @@ function (
 		Object.defineProperty(self, 'resize', {
 			value: resize
 		});
-		Object.defineProperty(self, 'svg', {
-			get: getSvg
+		Object.defineProperty(self, 'update', {
+			value: update
+		});
+		Object.defineProperty(self, 'two', {
+			get: function(){return two;}
 		});
 
 	}
