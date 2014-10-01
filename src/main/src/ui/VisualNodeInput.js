@@ -27,7 +27,8 @@ function (
 		self = this,
 		container,
 		interactable,
-		line;
+		line,
+		connectedOutput;
 
 		var eventsManager = new EventsManager();
 
@@ -77,7 +78,8 @@ function (
 				input.value = '';				
 				inputMirror.innerHTML = placeholder;
 				container.classList.add('placeholder');
-				drawLine(0,0,0,0);
+				connectedOutput = null;
+				update();
 				
 			});
 			eventsManager.add(TREE.connectionAdded, function(data){
@@ -90,43 +92,25 @@ function (
 				}
 				else{
 					// Check if incomming connectin belongs to a node
-					var fromArray = data.from.split('.');
-					if(fromArray.length == 2
-						&& TREE.data[fromArray[0]]
-						&& fromArray[1] == 'out'
-						&& DEFINITIONS.data[TREE.data[fromArray[0]].type].out
+					var from = data.from.split('.');
+					if(from.length == 2
+						&& TREE.data[from[0]]
+						&& from[1] == 'out'
+						&& DEFINITIONS.data[TREE.data[from[0]].type].out
 
 					){
-			
-						var editorPosition =
-							dom.calculatePosition(visualNode.editor.container);
-						
-						var inputPosition =
-							dom.calculatePosition(container);
-						var outputPosition =
-							dom.calculatePosition(
-								visualNode.editor.nodes[fromArray[0]].output.container
-							);
-
-						var inputX = inputPosition.x - editorPosition.x;
-						var inputY = inputPosition.y - editorPosition.y;
-
-						var outputX = outputPosition.x - editorPosition.x;
-						var outputY = outputPosition.y - editorPosition.y;
-
-						drawLine(outputX, outputY, inputX, inputY);
-	
+						connectedOutput = visualNode.editor.nodes[from[0]].outputObjects[from[1]];
 
 						inputMirror.innerHTML = data.from;
 						container.classList.add('connected-to-output');
 					}
 					else{
-						drawLine(0,0,0,0);
-
+						connectedOutput = null;
 						inputMirror.innerHTML = data.from;
 						container.classList.remove('connected-to-output');
 						
 					}
+					update();
 					container.classList.remove('placeholder');
 
 					
@@ -148,6 +132,23 @@ function (
 			}
 		}
 
+		var update = function(){
+			if(!connectedOutput) return drawLine(0,0,0,0);
+
+			var editorPosition = dom.calculatePosition(visualNode.editor.container);
+			
+			var inputPosition =	dom.calculatePosition(container);
+			var outputPosition = dom.calculatePosition(connectedOutput.container);
+
+			var inputX = inputPosition.x - editorPosition.x;
+			var inputY = inputPosition.y - editorPosition.y;
+
+			var outputX = outputPosition.x - editorPosition.x;
+			var outputY = outputPosition.y - editorPosition.y;
+
+			drawLine(outputX, outputY, inputX, inputY);
+		}
+		
 		var drawLine = function(x1,y1,x2,y2){
 			line.vertices[0].x = x1;
 			line.vertices[0].y = y1;
@@ -168,6 +169,10 @@ function (
 		Object.defineProperty(self, 'destroy', {
 			value: destroy
 		});
+		Object.defineProperty(self, 'update', {
+			value: update
+		});
+
 
 		init();
 	}

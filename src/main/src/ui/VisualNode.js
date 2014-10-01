@@ -23,8 +23,8 @@ function (
 		var
 		self = this,
 		container,
-		inputsObjects,
-		output,
+		inputObjects,
+		outputObjects,
 		interactable,
 		destroyed;
 
@@ -58,7 +58,7 @@ function (
 			container.appendChild(deleteButton);
 
 			// Inputs ----------------------------------------------------------
-			inputsObjects = [];
+			inputObjects = {};
 
 			var inputs = document.createElement('div');
 			inputs.classList.add('inputs');
@@ -72,7 +72,7 @@ function (
 						spec.inputs[inputId],
 						self
 					);
-					inputsObjects.push(input);
+					inputObjects[inputId] = input;
 					inputs.appendChild(input.container);
 				});
 			}
@@ -92,16 +92,20 @@ function (
 			container.appendChild(title);
 
 			// Outputs ---------------------------------------------------------
+			outputObjects = {};
+
 			var outputs = document.createElement('div');
 			outputs.classList.add('outputs');
 			container.appendChild(outputs);
 
 			if(spec.out){
-				output = new VisualNodeOutput(
-					'out',
+				var outputId = 'out';
+				var output = new VisualNodeOutput(
+					outputId,
 					id,
 					self
 				);
+				outputObjects[outputId] = output;
 				outputs.appendChild(output.container);
 			}
 			// Mouse events ----------------------------------------------------
@@ -147,10 +151,15 @@ function (
 			// On position updated ---------------------------------------------
 			eventsManager.add(TREE.nodePositionUpdated, function(_id, x, y){
 				if(id != _id) return;
-				
 				container.style.left = x + 'px';
 				container.style.top = y + 'px';
 
+				Object.keys(inputObjects).forEach(function(id){
+					inputObjects[id].update();
+				});
+				Object.keys(outputObjects).forEach(function(id){
+					outputObjects[id].update();
+				});
 			})
 		}
 
@@ -163,10 +172,15 @@ function (
 		var destroy = function(){
 			eventsManager.destroy();
 			interactable.unset();
-			inputsObjects.forEach(function(input){
-				input.destroy();
+			Object.keys(inputObjects).forEach(function(id){
+				inputObjects[id].destroy();
 			});
-			if(output) output.destroy();
+			inputObjects = null;
+
+			Object.keys(outputObjects).forEach(function(id){
+				outputObjects[id].destroy();
+			});
+			outputObjects = null;
 		}
 
 		Object.defineProperty(self, 'container', {
@@ -175,11 +189,11 @@ function (
 		Object.defineProperty(self, 'editor', {
 			get: function(){ return editor; }
 		});
-		Object.defineProperty(self, 'inputs', {
-			get: function(){ return inputs; }
+		Object.defineProperty(self, 'inputObjects', {
+			get: function(){ return inputObjects; }
 		});
-		Object.defineProperty(self, 'output', {
-			get: function(){ return output; }
+		Object.defineProperty(self, 'outputObjects', {
+			get: function(){ return outputObjects; }
 		});
 
 		init();

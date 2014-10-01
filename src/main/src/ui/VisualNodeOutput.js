@@ -13,10 +13,11 @@ function (
 ){
 	"use strict";
 
-	var VisualNodeOutput = function(id, nodeId){
+	var VisualNodeOutput = function(id, nodeId, visualNode){
 		var
 		self = this,
 		container,
+		connectedInputs,
 		interactable;
 
 		var eventsManager = new EventsManager();
@@ -52,7 +53,7 @@ function (
 			draggableConnector.innerHTML = '&nbsp';
 								
 			
-
+			// Enable Dragging
 			var x = 0; 
 			var y = 0; 
 			interactable = interact(draggableConnector)
@@ -75,37 +76,23 @@ function (
 					connector.style.transform =
 						'translate(' + x + 'px, ' + y + 'px)';
 				}
-			})
-			/*.restrict({
-				drag: 'parent',
-				endOnly: true,
-				elementRect: { top: 0, left: 0, bottom: 0, right: 0 }
-			});*/
-			/*TREE.nodePositionUpdated.add(function(_id, x, y){
-				if(id != _id) return;
-				
-				container.style.left = x + 'px';
-				container.style.top = y + 'px';
+			});
 
-				// Move to front
-				var parentNode = container.parentNode;
-				parentNode.removeChild(container);
-				parentNode.appendChild(container);
-			})*/
-
-			/*TREE.connectionAdded.add(function(data){
-				if(data.to != nodeId+'.'+id) return;
-				input.value = data.from;
+			// Keep track of connections
+			connectedInputs = {};
+			eventsManager.add(TREE.connectionAdded, function(data){
+				if(data.from != nodeId+'.'+id) return;
+				var to = data.to.split('.');
+	
+				connectedInputs[data.to] = 
+					visualNode.editor.nodes[to[0]].inputObjects[to[1]];
 				
-				if(!data.from){
-					inputMirror.innerHTML = placeholder;
-					container.classList.add('placeholder');
-				}
-				else{
-					inputMirror.innerHTML = data.from;
-					container.classList.remove('placeholder');
-				}
-			});*/
+				
+			});
+			eventsManager.add(TREE.connectionRemoved, function(data){
+				if(data.from != nodeId + '.' + id) return;
+				delete connectedInputs[data.to];
+			});
 		
 		}
 
@@ -114,12 +101,20 @@ function (
 			interactable.unset();
 		}
 
+		var update = function(){
+			Object.keys(connectedInputs).forEach(function(id){
+				connectedInputs[id].update();
+			});
+		}
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
 		});
 		Object.defineProperty(self, 'destroy', {
 			value: destroy
+		});
+		Object.defineProperty(self, 'update', {
+			value: update
 		});
 
 		init();
