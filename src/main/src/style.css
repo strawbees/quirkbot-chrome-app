@@ -1,8 +1,8 @@
 @import "reset.css";
-#cssdata {
-  display: none !important;
-  font-family: '{"input-letter-width":10,"input-letter-height":10}';
-}
+/*#cssdata{
+	display: none !important;
+	font-family: '{"input-letter-width":@{input-letter-width},"input-letter-height":@{input-letter-height}}';
+}*/
 body {
   padding: 0;
   margin: 0;
@@ -72,8 +72,8 @@ input[type=text] {
   display: table;
   width: 180px;
   min-height: 120px;
-  background-color: #ffffff;
-  border: solid 2px #000;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: solid 2px #000000;
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
   -ms-border-radius: 10px;
@@ -81,10 +81,10 @@ input[type=text] {
   border-radius: 10px;
 }
 .visual-node.selected {
-  background-color: #ffff00;
+  background-color: rgba(255, 255, 200, 0.9);
 }
 .visual-node.focus {
-  background-color: #ffff00;
+  background-color: rgba(255, 255, 200, 0.9);
 }
 .visual-node.focus .delete {
   display: block;
@@ -98,23 +98,30 @@ input[type=text] {
 }
 .visual-node .delete {
   position: absolute;
-  top: -20px;
-  right: -20px;
-  width: 40px;
-  height: 40px;
-  -webkit-border-radius: 20px;
-  -moz-border-radius: 20px;
-  -ms-border-radius: 20px;
-  -o-border-radius: 20px;
-  border-radius: 20px;
+  top: -9px;
+  right: -9px;
+  width: 30px;
+  height: 30px;
+  -webkit-border-radius: 15px;
+  -moz-border-radius: 15px;
+  -ms-border-radius: 15px;
+  -o-border-radius: 15px;
+  border-radius: 15px;
   -webkit-appearance: none;
   -moz-appearance: none;
   -ms-appearance: none;
   -o-appearance: none;
   appearance: none;
-  border: solid 3px #000;
+  border: solid 2px #000000;
   background-color: #fff;
   display: none;
+}
+.visual-node .delete:after {
+  display: block;
+  content: '\00D7';
+  color: red;
+  font-weight: bold;
+  font-size: 17px;
 }
 .visual-node .title {
   width: 100%;
@@ -181,6 +188,15 @@ input[type=text] {
   color: #999999;
   border-color: #999999;
 }
+.connected-to-output.visual-node-input .label .input-mirror,
+.connected-to-output.visual-node-output .label .input-mirror,
+.connected-to-input.visual-node-input .label .input-mirror,
+.connected-to-input.visual-node-output .label .input-mirror {
+  width: 21px;
+  overflow: hidden;
+  font-size: 0;
+  background-color: #000000;
+}
 .visual-node-input {
   margin-bottom: 5px;
 }
@@ -209,6 +225,11 @@ input[type=text] {
 }
 .visual-node-output .label .input-mirror {
   left: -10px;
+  -webkit-border-radius: 20px;
+  -moz-border-radius: 20px;
+  -ms-border-radius: 20px;
+  -o-border-radius: 20px;
+  border-radius: 20px;
 }
 .placeholder.visual-node-output .label .input-mirror {
   color: #999999;

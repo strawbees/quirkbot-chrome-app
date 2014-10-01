@@ -3,28 +3,34 @@
 
 // Variables -------------------------------------------------------------------
 @font-family: monospace;
-@input-letter-width: 10;
-@input-letter-height: 10;
 
 @visual-node-min-width: 180px;
 @visual-node-min-height: 120px;
 
 @connector-height: 20px;
+@connector-connected-width: 21px;
+@connector-focus-input-width: 100px;
 @connector-input-offset: 15px;
 @connector-text-offset: -10px;
 @connector-font-size: 11px;
 
+@delete-button-height: 30px;
+@delete-button-width: 30px;
+
 @visual-editor-bg-color: #727272;
-@visual-node-bg-color: white;
-@visual-node-selected-bg-color: yellow;
-@visual-node-focus-bg-color:yellow;
+@visual-node-bg-color: rgba(255,255,255, 0.9);
+@visual-node-selected-bg-color: rgba(255,255,200, 0.9);
+@visual-node-focus-bg-color:rgba(255,255,200, 0.9);;
 @input-placeholder-color: #999;
+@visual-node-border: solid 2px #000;
+
+@connection-background-color: #000;
 
 // Hack to expose css variables to javascript
-#cssdata{
+/*#cssdata{
 	display: none !important;
 	font-family: '{"input-letter-width":@{input-letter-width},"input-letter-height":@{input-letter-height}}';
-}
+}*/
 // General ---------------------------------------------------------------------
 body{
 	padding: 0;
@@ -106,7 +112,7 @@ input[type=text]{
 	min-height: @visual-node-min-height;
 
 	background-color: @visual-node-bg-color;
-	border: solid 2px #000;
+	border: @visual-node-border;
 	.border-radius(10px);
 
 	&.selected{
@@ -129,15 +135,23 @@ input[type=text]{
 
 	.delete{
 		position: absolute;
-		top: -20px;
-		right: -20px;
-		width: 40px;
-		height: 40px;
-		.border-radius(20px);
+		top: (@delete-button-height * -0.3);
+		right: (@delete-button-width * -0.3);
+		width: @delete-button-width;
+		height: @delete-button-height;
+		.border-radius(@delete-button-height * 0.5);
 		.appearance(none);
-		border: solid 3px #000;
+		border: @visual-node-border;
 		background-color: #fff;
 		display: none;
+
+		&:after{
+			display: block;
+			content: '\00D7';
+			color: red;
+			font-weight: bold;
+			font-size: 17px;
+		}
 
 	}
 	.title{
@@ -193,10 +207,18 @@ input[type=text]{
 				color: @input-placeholder-color;
 				border-color: @input-placeholder-color;
 			}
+			.connected-to-output&,
+			.connected-to-input&{
+				width: @connector-connected-width;
+				overflow: hidden;
+				font-size: 0;
+				background-color: @connection-background-color;
+			}
 		}
 
 	}
 }
+
 .visual-node-input{
 	margin-bottom: 5px;
 	&:single-child{
@@ -214,7 +236,7 @@ input[type=text]{
 		}
 		.input{
 			opacity: 0;
-			width: 100px;
+			width: @connector-focus-input-width;
 			&:focus {
 				opacity: 1;
 			}
@@ -223,6 +245,8 @@ input[type=text]{
 			display: none;
 		}
 	}
+
+	
 }
 .visual-node-output{
 	.label{
@@ -232,11 +256,13 @@ input[type=text]{
 		}
 		.input-mirror{
 			left: @connector-text-offset;
+			.border-radius(@connector-height);
 		}
 		.input-mirror{
 			.placeholder&{
 				color: @input-placeholder-color;
 				border-color: @input-placeholder-color;
+
 			}
 		}
 	}

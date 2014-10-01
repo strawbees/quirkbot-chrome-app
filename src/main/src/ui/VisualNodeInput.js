@@ -70,6 +70,9 @@ function (
 			});
 
 			// Monitor text changes in field
+			eventsManager.addEventListener(input, 'focus', function(){
+				input.select();
+			});
 			eventsManager.addEventListener(input, 'change', function(){
 				setConnectionValue(input.value);
 			});
@@ -78,6 +81,7 @@ function (
 				input.value = '';				
 				inputMirror.innerHTML = placeholder;
 				container.classList.add('placeholder');
+				container.classList.remove('connected-to-output');
 				connectedOutput = null;
 				update();
 				

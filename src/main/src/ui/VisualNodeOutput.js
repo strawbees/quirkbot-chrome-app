@@ -29,8 +29,7 @@ function (
 			container.classList.add('visual-node-output');
 			container.classList.add(id);
 			container.classList.add('placeholder');
-			container.classList.add('dragging');
-
+			
 			var label = document.createElement('label');
 			label.classList.add('label');
 			container.appendChild(label);
@@ -87,11 +86,17 @@ function (
 				connectedInputs[data.to] = 
 					visualNode.editor.nodes[to[0]].inputObjects[to[1]];
 				
-				
+				container.classList.add('connected-to-input');
+				container.classList.remove('placeholder');
 			});
 			eventsManager.add(TREE.connectionRemoved, function(data){
 				if(data.from != nodeId + '.' + id) return;
 				delete connectedInputs[data.to];
+
+				if(!Object.keys(connectedInputs).length){
+					container.classList.remove('connected-to-input');
+					container.classList.add('placeholder');
+				}
 			});
 		
 		}
