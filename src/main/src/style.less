@@ -4,6 +4,9 @@
 // Variables -------------------------------------------------------------------
 @font-family: monospace;
 
+@link-line-width: 2;
+@link-line-color: black;
+
 @visual-node-min-width: 180px;
 @visual-node-min-height: 120px;
 
@@ -27,10 +30,10 @@
 @connection-background-color: #000;
 
 // Hack to expose css variables to javascript
-/*#cssdata{
+#cssdata{
 	display: none !important;
-	font-family: '{"input-letter-width":@{input-letter-width},"input-letter-height":@{input-letter-height}}';
-}*/
+	font-family: '{"linkLineWidth":@{link-line-width}, "linkLineColor":"@{link-line-color}"}';
+}
 // General ---------------------------------------------------------------------
 body{
 	padding: 0;

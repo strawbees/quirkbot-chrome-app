@@ -1,8 +1,8 @@
 @import "reset.css";
-/*#cssdata{
-	display: none !important;
-	font-family: '{"input-letter-width":@{input-letter-width},"input-letter-height":@{input-letter-height}}';
-}*/
+#cssdata {
+  display: none !important;
+  font-family: '{"linkLineWidth":2, "linkLineColor":"#000000"}';
+}
 body {
   padding: 0;
   margin: 0;

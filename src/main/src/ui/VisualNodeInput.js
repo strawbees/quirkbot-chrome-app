@@ -3,6 +3,7 @@ define(
 	'require',
 	'happy/utils/DOM',
 	'libs/interact',
+	'CSSData',
 	'Tree',
 	'Definitions',
 	'SVGDrawing',
@@ -12,6 +13,7 @@ function (
 	require,
 	DOM,
 	interact,
+	CSSData,
 	TREE,
 	DEFINITIONS,
 	SVGDrawing,
@@ -61,6 +63,8 @@ function (
 
 			// Create the line that will be drawn between connectors
 			line = SVGDrawing.two.makeLine(0, 0, 0, 0);
+			line.linewidth = CSSData.get('linkLineWidth', 1);
+			line.stroke = CSSData.get('linkLineColor', 'black');
 
 			// Allow for drag and dropping of outputs
 			interactable = interact(inputMirror)
@@ -142,13 +146,15 @@ function (
 			var editorPosition = dom.calculatePosition(visualNode.editor.container);
 			
 			var inputPosition =	dom.calculatePosition(container);
+			var inputSize =	dom.measure(container);
 			var outputPosition = dom.calculatePosition(connectedOutput.container);
+			var outputSize = dom.measure(connectedOutput.container);
 
 			var inputX = inputPosition.x - editorPosition.x;
-			var inputY = inputPosition.y - editorPosition.y;
+			var inputY = (inputPosition.y + inputSize.height * 0.5) - editorPosition.y;
 
 			var outputX = outputPosition.x - editorPosition.x;
-			var outputY = outputPosition.y - editorPosition.y;
+			var outputY = (outputPosition.y + outputSize.height * 0.5) - editorPosition.y;
 
 			drawLine(outputX, outputY, inputX, inputY);
 		}
