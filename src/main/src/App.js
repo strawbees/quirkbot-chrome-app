@@ -1,6 +1,7 @@
 define(
 [
 	'happy/app/BaseApp',
+	'libs/parse',
 	'Tree',
 	'Definitions',
 	'SVGDrawing',
@@ -8,6 +9,7 @@ define(
 ],
 function (
 	BaseApp,
+	Parse,
 	TREE,
 	DEFINITIONS,
 	SVGDrawing,
@@ -20,7 +22,13 @@ function (
 		self = this;
 
 	
-		self.setup = function(){	
+		self.setup = function(){
+			/*Parse.initialize(
+				"oSSqARDBD4wxYVkkDSCwZNufdtl3D1h6peWmHEWG",
+				"uouLxvF7McUHQGMuTev72aC88LtGfNIuQYiqrfzh"
+			);*/
+		
+
 			self.container.classList.add('loading');
 
 			DEFINITIONS.load(self.container.dataset.indexPath 

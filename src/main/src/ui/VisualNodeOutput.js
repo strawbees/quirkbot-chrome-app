@@ -63,16 +63,16 @@ function (
 				onmove: function (event) {
 					x += event.dx;
 					y += event.dy;
-					connector.style.webkitTransform =
-					connector.style.transform =
+					draggableConnector.style.webkitTransform =
+					draggableConnector.style.transform =
 						'translate(' + x + 'px, ' + y + 'px)';
 				},
 				onend: function (event) {
 					container.classList.remove('dragging');
 					x = 0;
 					y = 0;
-					connector.style.webkitTransform =
-					connector.style.transform =
+					draggableConnector.style.webkitTransform =
+					draggableConnector.style.transform =
 						'translate(' + x + 'px, ' + y + 'px)';
 				}
 			});

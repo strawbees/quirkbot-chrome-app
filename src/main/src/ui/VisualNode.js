@@ -24,6 +24,7 @@ function (
 		self = this,
 		container,
 		inputObjects,
+		collectionInputObjects,
 		outputObjects,
 		interactable,
 		destroyed;
@@ -76,7 +77,46 @@ function (
 					inputs.appendChild(input.container);
 				});
 			}
+
+			collectionInputObjects = {};
 			if(spec.collection){
+				var collectionContainer = document.createElement('div');
+				collectionContainer.classList.add('collection-container');
+				collectionContainer.classList.add('placeholder');
+				inputs.appendChild(collectionContainer);
+
+				var collectionAdderContainer = document.createElement('div');
+				collectionAdderContainer.classList.add('adder-container');
+				collectionContainer.appendChild(collectionAdderContainer);
+
+				var collectionAdderButton = document.createElement('div');
+				collectionAdderButton.classList.add('button');
+				collectionAdderContainer.appendChild(collectionAdderButton);
+
+				var collectionAdderText = document.createElement('div');
+				collectionAdderText.classList.add('text');
+				collectionAdderText.innerHTML = 'items';
+				collectionAdderContainer.appendChild(collectionAdderText);
+
+
+				eventsManager.addEventListener(collectionAdderButton, 'click', function(){
+					var collectionKeys =  Object.keys(collectionInputObjects);
+					var inputIndex = collectionKeys.length;
+					var inputId = 'items['+inputIndex+']';
+
+					collectionContainer.classList.remove('placeholder');
+
+					var input = new VisualNodeInput(
+						inputIndex,
+						id,
+						0,
+						self
+					);
+					inputObjects[inputId] = input;
+					collectionInputObjects[inputId] = input
+					collectionContainer.appendChild(input.container);
+				
+				});
 				/*spec.inputs.forEach(function(name){
 					var input = document.createElement('div');
 					input.classList.add('input');
