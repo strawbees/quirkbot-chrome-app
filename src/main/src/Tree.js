@@ -55,18 +55,18 @@ function (
 					nodeAdded.dispatch(node);
 					nodePositionUpdated.dispatch(
 						node,
-						data[node].visualX,
-						data[node].visualY
+						data[node]._x,
+						data[node]._y
 					);
 				}
 				else{
 					// The node position has been updated
-					if(data[node].visualX != clone[node].visualX
-						|| data[node].visualY != clone[node].visualY){
+					if(data[node]._x != clone[node]._x
+						|| data[node]._y != clone[node]._y){
 						nodePositionUpdated.dispatch(
 							node,
-							data[node].visualX,
-							data[node].visualY
+							data[node]._x,
+							data[node]._y
 						);
 					}
 				}

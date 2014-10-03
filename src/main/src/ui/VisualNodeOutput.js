@@ -87,7 +87,6 @@ function (
 				connectedInputs[data.to] = 
 					visualNode.editor.nodes[to[0]].inputObjects[to[1]];
 				
-				console.log(data.to,connectedInputs[data.to],visualNode.editor.nodes[to[0]].inputObjects)
 				container.classList.add('connected-to-input');
 				container.classList.remove('placeholder');
 			});

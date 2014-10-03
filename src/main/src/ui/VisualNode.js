@@ -180,8 +180,8 @@ function (
 			});
 			
 			// Dragging	--------------------------------------------------------		
-			if(!treeNode.visualX) treeNode.visualX = 0;
-			if(!treeNode.visualY) treeNode.visualY = 0;
+			if(!treeNode._x) treeNode._x = 0;
+			if(!treeNode._y) treeNode._y = 0;
 			interactable = interact(container)
 			.draggable({
 				onstart:function(event){
@@ -189,8 +189,8 @@ function (
 				},
 				onmove: function (event) {
 					var target = event.target;
-					treeNode.visualX += event.dx;
-					treeNode.visualY += event.dy;
+					treeNode._x += event.dx;
+					treeNode._y += event.dy;
 				},
 				onend: function (event) {}
 			})

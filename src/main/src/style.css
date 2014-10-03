@@ -70,7 +70,7 @@ input[type=text] {
 .visual-node {
   position: absolute;
   display: table;
-  width: 200px;
+  width: 150px;
   min-height: 30px;
   background-color: rgba(255, 255, 255, 0.9);
   border: solid 2px #000000;
@@ -144,6 +144,7 @@ input[type=text] {
   text-align: center;
   display: table-cell;
   vertical-align: middle;
+  padding: 0 50px;
 }
 .visual-node .inputs {
   display: table-cell;
