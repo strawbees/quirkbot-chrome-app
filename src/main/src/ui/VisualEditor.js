@@ -35,6 +35,7 @@ function (
 
 			TREE.nodeAdded.add(onNodeAdded);
 			TREE.nodeRemoved.add(onNodeRemoved);
+
 		}
 
 		var onNodeAdded = function(id){

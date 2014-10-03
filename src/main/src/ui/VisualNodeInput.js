@@ -24,10 +24,14 @@ function (
 
 	var dom = new DOM();
 
-	var VisualNodeInput = function(id, nodeId, placeholder, visualNode){
+	var VisualNodeInput = function(textLabel, id, nodeId, placeholder, visualNode){
 		var
 		self = this,
 		container,
+		label,
+		input,
+		inputMirror,
+		text,
 		interactable,
 		line,
 		connectedOutput;
@@ -42,23 +46,23 @@ function (
 			container.classList.add(id);
 			container.classList.add('placeholder');
 
-			var label = document.createElement('label');
+			label = document.createElement('label');
 			label.classList.add('label');
 			container.appendChild(label);	
 
-			var input = document.createElement('input');
+			input = document.createElement('input');
 			input.type = 'text';
 			input.classList.add('input');
 			label.appendChild(input);
 
-			var inputMirror = document.createElement('div');
+			inputMirror = document.createElement('div');
 			inputMirror.classList.add('input-mirror');
 			label.appendChild(inputMirror);
 			inputMirror.innerHTML = placeholder;	
 
-			var text = document.createElement('div');
+			text = document.createElement('div');
 			text.classList.add('text');
-			text.innerHTML = id;
+			text.innerHTML = textLabel;
 			label.appendChild(text);
 
 			// Create the line that will be drawn between connectors
@@ -91,40 +95,44 @@ function (
 				
 			});
 			eventsManager.add(TREE.connectionAdded, function(data){
-				if(data.to != nodeId+'.'+id) return;
-				input.value = data.from;
-				
-				if(!data.from){
-					inputMirror.innerHTML = placeholder;
-					container.classList.add('placeholder');
-				}
-				else{
-					// Check if incomming connectin belongs to a node
-					var from = data.from.split('.');
-					if(from.length == 2
-						&& TREE.data[from[0]]
-						&& from[1] == 'out'
-						&& DEFINITIONS.data[TREE.data[from[0]].type].out
-
-					){
-						connectedOutput = visualNode.editor.nodes[from[0]].outputObjects[from[1]];
-
-						inputMirror.innerHTML = data.from;
-						container.classList.add('connected-to-output');
-					}
-					else{
-						connectedOutput = null;
-						inputMirror.innerHTML = data.from;
-						container.classList.remove('connected-to-output');
-						
-					}
-					update();
-					container.classList.remove('placeholder');
-
-					
-				}
+				proccessIncomingConnection(data)
 			});
 		
+		}
+
+		var proccessIncomingConnection = function(data){
+			if(data.to != nodeId+'.'+id) return;
+			input.value = data.from;
+			
+			if(!data.from){
+				inputMirror.innerHTML = placeholder;
+				container.classList.add('placeholder');
+			}
+			else{
+				// Check if incomming connectin belongs to a node
+				var from = data.from.split('.');
+				if(from.length == 2
+					&& TREE.data[from[0]]
+					&& from[1] == 'out'
+					&& DEFINITIONS.data[TREE.data[from[0]].type].out
+
+				){
+					connectedOutput = visualNode.editor.nodes[from[0]].outputObjects[from[1]];
+
+					inputMirror.innerHTML = data.from;
+					container.classList.add('connected-to-output');
+				}
+				else{
+					connectedOutput = null;
+					inputMirror.innerHTML = data.from;
+					container.classList.remove('connected-to-output');
+					
+				}
+				update();
+				container.classList.remove('placeholder');
+
+				
+			}
 		}
 
 		var setConnectionValue = function(value){
@@ -175,6 +183,9 @@ function (
 
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
+		});
+		Object.defineProperty(self, 'proccessIncomingConnection', {
+			value: proccessIncomingConnection
 		});
 		Object.defineProperty(self, 'destroy', {
 			value: destroy

@@ -69,6 +69,7 @@ function (
 				Object.keys(spec.inputs).forEach(function(inputId){
 					var input = new VisualNodeInput(
 						inputId,
+						inputId,
 						id,
 						spec.inputs[inputId],
 						self
@@ -78,8 +79,10 @@ function (
 				});
 			}
 
+			// Collections
 			collectionInputObjects = {};
 			if(spec.collection){
+				
 				var collectionContainer = document.createElement('div');
 				collectionContainer.classList.add('collection-container');
 				collectionContainer.classList.add('placeholder');
@@ -100,31 +103,39 @@ function (
 
 
 				eventsManager.addEventListener(collectionAdderButton, 'click', function(){
-					var collectionKeys =  Object.keys(collectionInputObjects);
-					var inputIndex = collectionKeys.length;
-					var inputId = 'items['+inputIndex+']';
-
-					collectionContainer.classList.remove('placeholder');
-
-					var input = new VisualNodeInput(
-						inputIndex,
-						id,
-						0,
-						self
-					);
-					inputObjects[inputId] = input;
-					collectionInputObjects[inputId] = input
-					collectionContainer.appendChild(input.container);
+					createCollectionInput(collectionContainer);
 				
 				});
-				/*spec.inputs.forEach(function(name){
-					var input = document.createElement('div');
-					input.classList.add('input');
-					input.innerHTML = name;
 
-					inputs.appendChild(input);
-				});*/
+				// Monitor the connections, so we can create the inputs on the fly
+				eventsManager.add(TREE.connectionAdded, function(data){
+					var to = data.to.split('.');
+					if(to.length != 2) return;
+					if(to[0] != id) return;
+
+					var inputId = to[1];
+
+					if(collectionInputObjects[inputId]) return;
+
+					var regex = /^items\[([0-9]+)\]$/g;
+					var regexArray = regex.exec(inputId);
+
+					var inputIndex = parseInt(regexArray[1]);
+					var collectionLength = inputIndex+1;
+
+					for (var i = 0; i < collectionLength; i++) {
+						if(collectionInputObjects['items['+i+']']) continue;
+						createCollectionInput(collectionContainer);
+					};
+
+
+					// Manually call the connection, since we are too late to
+					// monitor the TREE.connectionAdded
+					collectionInputObjects[inputId].proccessIncomingConnection(data);
+				});
 			}
+
+
 			// Title -----------------------------------------------------------
 			var title = document.createElement('h5');
 			title.classList.add('title');
@@ -203,6 +214,25 @@ function (
 			})
 		}
 
+		var createCollectionInput = function(collectionContainer){
+			var collectionKeys =  Object.keys(collectionInputObjects);
+			var inputIndex = collectionKeys.length;
+			var inputId = 'items['+inputIndex+']';
+
+			collectionContainer.classList.remove('placeholder');
+
+			var input = new VisualNodeInput(
+				inputIndex,
+				inputId,
+				id,
+				0,
+				self
+			);
+			inputObjects[inputId] = input;
+			collectionInputObjects[inputId] = input;
+
+			collectionContainer.appendChild(input.container);
+		}
 		var moveToFront = function(){
 			var parentNode = container.parentNode;
 			parentNode.removeChild(container);
