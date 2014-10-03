@@ -132,7 +132,8 @@ function (
 					// Manually call the connection, since we are too late to
 					// monitor the TREE.connectionAdded
 					collectionInputObjects[inputId].proccessIncomingConnection(data);
-				});
+				}, 999);// <-- this 999 is the priority for the sigal, so this
+				// runs before VisualNodeOutput
 			}
 
 

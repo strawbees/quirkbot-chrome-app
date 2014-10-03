@@ -5,7 +5,8 @@ define(
 	'Tree',
 	'Definitions',
 	'SVGDrawing',
-	'UI'
+	'UI',
+	'happy/_libs/signals'
 ],
 function (
 	BaseApp,
@@ -13,10 +14,13 @@ function (
 	TREE,
 	DEFINITIONS,
 	SVGDrawing,
-	UI
+	UI,
+	Signal
 ){
 	"use strict";
 
+
+	var s = new Signal();
 	var App = function(){
 		var 
 		self = this;
@@ -28,6 +32,7 @@ function (
 				"uouLxvF7McUHQGMuTev72aC88LtGfNIuQYiqrfzh"
 			);*/
 		
+			window.TREE = TREE
 
 			self.container.classList.add('loading');
 

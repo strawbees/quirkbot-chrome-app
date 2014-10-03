@@ -9,13 +9,13 @@ function (
 		var self = this,
 		stack = [];
 
-		var add = function(object, fnc){
-			create('add', 'remove', object, null, fnc);
+		var add = function(object, fnc, priority){
+			create('add', 'remove', object, null, fnc, priority);
 		}
 		var addEventListener = function(object, e, fnc){
 			create('addEventListener', 'removeEventListener', object, e, fnc);
 		}
-		var create = function(addSyntax, removeSyntax, object, e, fnc){
+		var create = function(addSyntax, removeSyntax, object, e, fnc, priority){
 			var ref = {
 				add : addSyntax,
 				remove: removeSyntax,
@@ -23,11 +23,14 @@ function (
 				e: e,
 				fnc: fnc
 			}
+			if(typeof priority === 'undefined') priority = 0;
 			stack.push(ref);
-			if(e)
+			if(e){
 				ref.object[ref.add](ref.e, ref.fnc);
-			else 
-				ref.object[ref.add](ref.fnc);
+			}
+			else {
+				ref.object[ref.add](ref.fnc, this, priority);
+			}
 			
 		}
 		var destroy = function(){

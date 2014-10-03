@@ -82,10 +82,12 @@ function (
 			eventsManager.add(TREE.connectionAdded, function(data){
 				if(data.from != nodeId+'.'+id) return;
 				var to = data.to.split('.');
-	
+				
+
 				connectedInputs[data.to] = 
 					visualNode.editor.nodes[to[0]].inputObjects[to[1]];
 				
+				console.log(data.to,connectedInputs[data.to],visualNode.editor.nodes[to[0]].inputObjects)
 				container.classList.add('connected-to-input');
 				container.classList.remove('placeholder');
 			});
@@ -107,6 +109,7 @@ function (
 		}
 
 		var update = function(){
+
 			Object.keys(connectedInputs).forEach(function(id){
 				connectedInputs[id].update();
 			});
