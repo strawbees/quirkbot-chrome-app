@@ -5,6 +5,7 @@
 	"out" : true,
 	"collection" : false,
 	"inputs" : {
-		"in" : 0
+		"in" : 0,
+		"trigger" : 0
 	}
 }

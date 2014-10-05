@@ -263,6 +263,7 @@ input[type=text]{
 }
 
 .visual-node-input{
+	position: relative;
 	&:single-child{
 		margin-bottom: 0;
 	}
@@ -293,7 +294,6 @@ input[type=text]{
 			}
 		}
 	}
-
 	
 }
 .visual-node-output{
@@ -361,6 +361,28 @@ input[type=text]{
 		margin-bottom: 2px;
 		&:last-child{
 			margin-bottom: 0;
+		}
+
+		.delete-button{
+			.button(@collection-adder-button-bg-color, @collection-adder-button-text-color);
+			.connector-input-style();
+			.border-radius(100%);
+			height: 70%;
+			padding: 0px 3px;
+			left: 10px;
+			top: 3px;
+			&:after{
+				display: block;
+				content: '\002212';
+				font-weight: bold;
+				font-size: 10px;
+			}
+
+		}
+		.label{
+			.text{
+				left: (@connector-input-offset * 2);
+			}
 		}
 	}
 

@@ -233,6 +233,12 @@ function (
 			collectionInputObjects[inputId] = input;
 
 			collectionContainer.appendChild(input.container);
+
+			// Create the delete button
+			var deleteButton = document.createElement('div');
+			deleteButton.classList.add('delete-button');
+			input.container.appendChild(deleteButton);
+
 		}
 		var moveToFront = function(){
 			var parentNode = container.parentNode;
