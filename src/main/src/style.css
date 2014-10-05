@@ -72,7 +72,7 @@ input[type=text] {
   display: table;
   width: 150px;
   min-height: 30px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.8);
   border: solid 2px #000000;
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
@@ -83,7 +83,7 @@ input[type=text] {
   padding-bottom: 10px;
 }
 .visual-node.selected {
-  background-color: rgba(255, 255, 200, 0.9);
+  background-color: rgba(255, 255, 200, 0.8);
 }
 .visual-node.focus {
   background-color: rgba(255, 255, 200, 0.9);

@@ -117,10 +117,7 @@ function (
 
 					if(collectionInputObjects[inputId]) return;
 
-					var regex = /^items\[([0-9]+)\]$/g;
-					var regexArray = regex.exec(inputId);
-
-					var inputIndex = parseInt(regexArray[1]);
+					var inputIndex = getIndexFromCollectionInputId(inputId);
 					var collectionLength = inputIndex+1;
 
 					for (var i = 0; i < collectionLength; i++) {
@@ -218,7 +215,7 @@ function (
 		var createCollectionInput = function(collectionContainer){
 			var collectionKeys =  Object.keys(collectionInputObjects);
 			var inputIndex = collectionKeys.length;
-			var inputId = 'items['+inputIndex+']';
+			var inputId = getIdFromCollectionInputIndex(inputIndex);
 
 			collectionContainer.classList.remove('placeholder');
 
@@ -239,7 +236,42 @@ function (
 			deleteButton.classList.add('delete-button');
 			input.container.appendChild(deleteButton);
 
+			eventsManager.addEventListener(deleteButton, 'click', function(){
+				if(TREE.data[id].inputs[inputId])
+					delete TREE.data[id].inputs[inputId];
+
+				Object.keys(TREE.data[id].inputs).forEach(function(key){
+					var index = getIndexFromCollectionInputId(key);
+					if(index <= inputIndex) return;
+					var newId = getIdFromCollectionInputIndex(index-1);
+
+					TREE.data[id].inputs[newId] = TREE.data[id].inputs[key];
+					delete TREE.data[id].inputs[key];
+				})
+
+				// "visually" remove last input
+				var lastIndex =  Object.keys(collectionInputObjects).length - 1;
+				var lastId =  getIdFromCollectionInputIndex(lastIndex);
+	
+				collectionContainer.removeChild(collectionInputObjects[lastId].container);
+
+				delete collectionInputObjects[lastId];
+				delete inputObjects[lastId];
+			});
+
 		}
+
+		var getIndexFromCollectionInputId = function(inputId){
+			var regex = /^items\[([0-9]+)\]$/g;
+			var regexArray = regex.exec(inputId);
+
+			var inputIndex = parseInt(regexArray[1]);
+			return inputIndex;
+		}
+		var getIdFromCollectionInputIndex = function(inputIndex){
+			return 'items['+inputIndex+']';
+		}
+
 		var moveToFront = function(){
 			var parentNode = container.parentNode;
 			parentNode.removeChild(container);
