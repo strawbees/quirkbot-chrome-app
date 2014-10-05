@@ -1,9 +1,11 @@
 define(
 [	
+	'ui/Menu',
 	'ui/DefinitionList',
 	'ui/VisualEditor'
 ],
 function (
+	Menu,
 	DefinitionList,
 	VisualEditor
 ){
@@ -11,16 +13,21 @@ function (
 
 	var UI = function(){
 		var self = this,
+		menu,
 		definitionList,
 		visualEditor;
 
 		var init = function(){
+			menu = new Menu();
 			definitionList = new DefinitionList();
 			visualEditor = new VisualEditor();
 		}
 
 		Object.defineProperty(self, 'init', {
 			value: init
+		});
+		Object.defineProperty(self, 'menu', {
+			get: function(){ return menu; }
 		});
 		Object.defineProperty(self, 'definitionList', {
 			get: function(){ return definitionList; }

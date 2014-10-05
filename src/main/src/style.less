@@ -7,6 +7,10 @@
 @link-line-width: 2;
 @link-line-color: black;
 
+@menu-height: 7%;
+
+@definition-list-width: 15%;
+
 @visual-node-min-width: 150px;
 @visual-node-min-height: 30px;
 
@@ -24,6 +28,9 @@
 @button-border: solid 1px #000;
 @visual-node-border: solid 2px #000;
 
+@menu-bg-color: rgb(39, 39, 39);
+@menu-tab-inactive-color: rgb(73, 73, 73);
+@menu-tab-active-color: @visual-editor-bg-color;
 @visual-editor-bg-color: #727272;
 @visual-node-bg-color: rgba(255,255,255, 0.8);
 @visual-node-selected-bg-color: rgba(255,255,200, 0.8);
@@ -90,18 +97,85 @@ body{
 input[type=text]{
 	font-family: @font-family;
 }
+input[type=radio]{
+	font-family: @font-family;
+}
+input:focus {
+	outline:0;
+}
+
 .loading{
 	background-color: red;
+}
+
+// Menu -------------------------------------------------------------
+.menu{
+	background-color: @menu-bg-color; 
+	position: absolute;
+	top:0;
+	left: 0;
+	width: 100%;
+	height: @menu-height;
+
+	.tabs{
+		position: absolute;
+		height: 90%;
+		right: 0;
+		bottom: 0;
+		width: (100% - @definition-list-width);
+	}
+	.tab{
+		position: relative;
+		.appearance(none);
+		display: table;
+		float: left;
+		margin: 0;
+		padding: 0;
+		width: 20%;
+		height: 100%;
+		background-color: @menu-tab-inactive-color;
+		.border-radius(10px 10px 0 0);
+		.box-sizing(border-box);
+		vertical-align: bottom;
+		.box-shadow(0px -2px 2px 0px rgba(0,0,0,0.75));
+		border-bottom: solid 1px rgba(255,255,255, 0.1);
+
+		&:checked{
+			background-color: @menu-tab-active-color;
+			z-index: 1;
+		}
+
+		&:after{
+			display: block;
+			color: white;
+			text-align: center;	
+			font-size: 12px;
+			height: 100%;
+			width: 100%;
+			display: table-cell;
+			vertical-align: middle;
+			text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+		}
+		&.visual:after{
+			content: 'Visual Editor';
+		}
+		&.code:after{
+			content: 'Code Editor';
+		}
+		&.serial:after{
+			content: 'Serial Monitor';
+		}
+	}
 }
 
 // Definition List -------------------------------------------------------------
 .definition-list{
 	background-color: yellow; 
 	position: absolute;
-	top:0;
+	top:@menu-height;
 	left: 0;
-	width: 15%;
-	min-height: 100%;
+	width: @definition-list-width;
+	min-height: (100% - @menu-height);
 }
 .definition-item{
 	position: relative;
@@ -146,10 +220,10 @@ input[type=text]{
 .visual-editor{
 	background-color: @visual-editor-bg-color; 
 	position: absolute;
-	top:0;
+	top:@menu-height;
 	left: 15%;
-	width: 85%;
-	height: 100%;
+	width: (100% - @definition-list-width);
+	min-height: (100% - @menu-height);
 	overflow: hidden;
 }
 .visual-node{

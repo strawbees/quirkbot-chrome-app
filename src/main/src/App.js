@@ -54,6 +54,7 @@ function (
 		var createUI = function(){
 			UI.init();
 
+			self.container.appendChild(UI.menu.container);
 			self.container.appendChild(UI.definitionList.container);
 			self.container.appendChild(UI.visualEditor.container);
 
