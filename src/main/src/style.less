@@ -217,7 +217,7 @@ input:focus {
 	}
 }
 // Visual Editor ---------------------------------------------------------------
-.visual-editor{
+.ui-visual-editor{
 	background-color: @visual-editor-bg-color; 
 	position: absolute;
 	top:@menu-height;
@@ -459,6 +459,16 @@ input:focus {
 			}
 		}
 	}
+
+}
+// Code Editor --------------------------------------------------------------
+.ui-code-editor{ 
+	position: absolute;
+	top:@menu-height;
+	left: 15%;
+	width: (100% - @definition-list-width);
+	min-height: (100% - @menu-height);
+	overflow: hidden;
 
 }
 // Serial Monitor --------------------------------------------------------------

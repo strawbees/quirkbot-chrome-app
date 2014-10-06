@@ -135,7 +135,7 @@ input:focus {
   width: 10%;
   height: 100%;
 }
-.visual-editor {
+.ui-visual-editor {
   background-color: #727272;
   position: absolute;
   top: 7%;
@@ -475,6 +475,14 @@ input:focus {
 }
 .collection-container .visual-node-input .label .text {
   left: 30px;
+}
+.ui-code-editor {
+  position: absolute;
+  top: 7%;
+  left: 15%;
+  width: 85%;
+  min-height: 93%;
+  overflow: hidden;
 }
 .ui-serial-monitor {
   position: absolute;

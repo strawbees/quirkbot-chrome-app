@@ -1,5 +1,6 @@
 {
 	"name": "Sonar",
+	"type": "Sonar",
 	"icon" : "",
 	"inputs" : {
 		"pin" : -1

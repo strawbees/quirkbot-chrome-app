@@ -17,7 +17,7 @@ function (
 
 		var init = function() {
 			container = document.createElement('div');
-			container.classList.add('visual-editor');
+			container.classList.add('ui-visual-editor');
 
 			/*document.addEventListener('keydown', function(e){
 				console.log(e)

@@ -1,5 +1,6 @@
 {
 	"name": "Gate",
+	"type": "Gate",
 	"icon" : "",
 	"in" : true,
 	"out" : true,
