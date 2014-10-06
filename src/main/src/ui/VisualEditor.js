@@ -36,6 +36,7 @@ function (
 			TREE.nodeAdded.add(onNodeAdded);
 			TREE.nodeRemoved.add(onNodeRemoved);
 
+			hide();
 		}
 
 		var onNodeAdded = function(id){
@@ -46,6 +47,30 @@ function (
 			delete nodes[id];
 		}
 
+
+		var update = function(){
+			Object.keys(nodes).forEach(function(id){
+				nodes[id].update();
+			})
+		}
+
+		var show = function(){
+			container.style.display = 'block';
+			update();
+		}
+		var hide = function(){
+			container.style.display = 'none';
+		}
+
+		Object.defineProperty(self, 'show', {
+			value: show
+		});
+		Object.defineProperty(self, 'hide', {
+			value: hide
+		});
+		Object.defineProperty(self, 'update', {
+			value: update
+		});
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
 		});

@@ -291,7 +291,21 @@ function (
 			});
 			outputObjects = null;
 		}
+		var update = function(){
+			Object.keys(inputObjects).forEach(function(id){
+				inputObjects[id].update();
+			});
+			Object.keys(outputObjects).forEach(function(id){
+				outputObjects[id].update();
+			});
+		}
 
+		Object.defineProperty(self, 'update', {
+			value: update
+		});
+		Object.defineProperty(self, 'destroy', {
+			value: destroy
+		});
 		Object.defineProperty(self, 'container', {
 			get: function(){ return container; }
 		});

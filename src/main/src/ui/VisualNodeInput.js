@@ -163,7 +163,7 @@ function (
 
 			var outputX = outputPosition.x - editorPosition.x;
 			var outputY = (outputPosition.y + outputSize.height * 0.5) - editorPosition.y;
-
+			
 			drawLine(outputX, outputY, inputX, inputY);
 		}
 		

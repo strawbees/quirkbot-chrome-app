@@ -167,10 +167,10 @@ function (
 		};
 
 		var save = function(){
-			sessionStorage.setItem("QuirkbotAutoSaveTree", JSON.stringify(data));
+			localStorage.setItem("QuirkbotAutoSaveTree", JSON.stringify(data));
 		}
 		var load = function(){
-			var saved = sessionStorage.getItem('QuirkbotAutoSaveTree');
+			var saved = localStorage.getItem('QuirkbotAutoSaveTree');
 			data = (saved) ? JSON.parse(saved) : {};
 		}
 

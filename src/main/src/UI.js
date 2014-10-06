@@ -2,12 +2,16 @@ define(
 [	
 	'ui/Menu',
 	'ui/DefinitionList',
-	'ui/VisualEditor'
+	'ui/VisualEditor',
+	'ui/CodeEditor',
+	'ui/SerialMonitor'
 ],
 function (
 	Menu,
 	DefinitionList,
-	VisualEditor
+	VisualEditor,
+	CodeEditor,
+	SerialMonitor
 ){
 	"use strict";
 
@@ -15,12 +19,16 @@ function (
 		var self = this,
 		menu,
 		definitionList,
-		visualEditor;
+		visualEditor,
+		codeEditor,
+		serialMonitor;
 
 		var init = function(){
 			menu = new Menu();
 			definitionList = new DefinitionList();
 			visualEditor = new VisualEditor();
+			codeEditor = new CodeEditor();
+			serialMonitor = new SerialMonitor();
 		}
 
 		Object.defineProperty(self, 'init', {
@@ -34,6 +42,12 @@ function (
 		});
 		Object.defineProperty(self, 'visualEditor', {
 			get: function(){ return visualEditor; }
+		});
+		Object.defineProperty(self, 'codeEditor', {
+			get: function(){ return codeEditor; }
+		});
+		Object.defineProperty(self, 'serialMonitor', {
+			get: function(){ return serialMonitor; }
 		});
 	}
 
