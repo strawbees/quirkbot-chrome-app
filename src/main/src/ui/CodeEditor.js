@@ -38,7 +38,7 @@ function (
 			var instances = Object.keys(data);
 			instances.sort(nodeSort);
 			instances.forEach(function(instance){
-				var type = DEFINITIONS.data[data[instance].type].name
+				var type = DEFINITIONS.data[data[instance].type].type;
 				
 				text += type + ' ' + instance + ';';
 				text += generateNewLine();
