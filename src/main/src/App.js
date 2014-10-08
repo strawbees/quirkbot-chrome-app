@@ -27,12 +27,8 @@ function (
 
 	
 		self.setup = function(){
-			/*Parse.initialize(
-				"oSSqARDBD4wxYVkkDSCwZNufdtl3D1h6peWmHEWG",
-				"uouLxvF7McUHQGMuTev72aC88LtGfNIuQYiqrfzh"
-			);*/
-		
-			window.TREE = TREE
+					
+			window.TREE = TREE;
 
 			self.container.classList.add('loading');
 
@@ -52,42 +48,11 @@ function (
 		}
 
 		var createUI = function(){
-			UI.init();
-
-			self.container.appendChild(UI.menu.container);
-			self.container.appendChild(UI.definitionList.container);
-			self.container.appendChild(UI.visualEditor.container);
-			self.container.appendChild(UI.codeEditor.container);
-			self.container.appendChild(UI.serialMonitor.container);
-
+			UI.init(self.container);
 			SVGDrawing.init(UI.visualEditor.container);
-
-
-			
-			UI.visualEditor.hide();
-			UI.visualEditor.hide();
-			UI.visualEditor.hide();
-			
-			var currentTab;
-			UI.menu.tabChanged.add(function(tab){
-				if(currentTab){
-					currentTab.hide();
-				}
-				switch(tab){
-					case 'visual':
-						currentTab = UI.visualEditor;
-						break;
-					case 'code':
-						currentTab = UI.codeEditor;
-						break;
-					case 'serial':
-						currentTab = UI.serialMonitor;
-						break;
-				}
-				currentTab.show();
+			UI.menu.tabChanged.add(function(tab){		
 				self.onResize(self.size);
 			})
-
 		}
 
 		self.onResize = function(size){

@@ -21,6 +21,11 @@ function (
 			container = document.createElement('div');
 			container.classList.add('menu');
 
+			setupTabs();
+
+		}
+
+		var setupTabs = function(){
 			var tabs = document.createElement('div');
 			tabs.classList.add('tabs');
 			container.appendChild(tabs);
@@ -85,7 +90,6 @@ function (
 			eventsManager.add(tabChanged, function(tab){
 				localStorage.setItem("QuirkbotCurrentTab", tab);
 			})
-
 		}
 
 

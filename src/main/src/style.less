@@ -28,6 +28,8 @@
 @button-border: solid 1px #000;
 @visual-node-border: solid 2px #000;
 
+@authentication-bg-color: rgba(0,0,0, 0.7);
+@authentication-inner-bg-color: rgba(255,255,255, 1);
 @menu-bg-color: rgb(39, 39, 39);
 @menu-tab-inactive-color: rgb(73, 73, 73);
 @menu-tab-active-color: @visual-editor-bg-color;
@@ -94,10 +96,8 @@ body{
 	height: 100%;
 	font-family: @font-family;
 }
-input[type=text]{
-	font-family: @font-family;
-}
-input[type=radio]{
+input,
+button{
 	font-family: @font-family;
 }
 input:focus {
@@ -122,7 +122,7 @@ input:focus {
 		height: 90%;
 		right: 0;
 		bottom: 0;
-		width: (100% - @definition-list-width);
+		//width: (100% - @definition-list-width);
 	}
 	.tab{
 		position: relative;
@@ -130,8 +130,8 @@ input:focus {
 		display: table;
 		float: left;
 		margin: 0;
-		padding: 0;
-		width: 20%;
+		padding: 0 20px;
+		//width: 20%;
 		height: 100%;
 		background-color: @menu-tab-inactive-color;
 		.border-radius(10px 10px 0 0);
@@ -167,7 +167,79 @@ input:focus {
 		}
 	}
 }
+// Authentication --------------------------------------------------------------
+.ui-authentication{
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height:100%;
+	overflow: hidden;
+	z-index: 1;
+	background-color: @authentication-bg-color; 
+	//display: table;
+	text-align: center;
+	.inner{
+		display: inline-block;
+		background-color: @authentication-inner-bg-color;
+		padding: 20px;
+		width: 100%;
+		max-width: 250px;
 
+		.heading{
+			font-size: 30px;
+		}
+
+		.wrapper{
+			text-align: left;
+			margin-top: 20px;
+
+			.title{
+				font-size: 15px;
+				margin-bottom: 5px;
+			}
+			input,
+			.button{
+				display: block;
+				width: 100%;
+				font-size: 15px;
+				box-sizing: border-box;
+				margin: 5px 0;
+			}
+
+			.button{
+				background-color: black;
+				color: white;
+				text-align: center;
+				text-decoration: none;
+				padding: 5px;
+				&:hover{
+					background-color: lighten(black, 40%)
+				}
+			}
+
+			.message{
+				padding: 5px;
+				font-size: 12px;
+				text-align: center;
+				margin: 5px 0;
+				background-color: yellow;
+
+				&.error{
+					background-color: red;
+					color: white;
+				}
+
+
+				&:empty{
+					display: none
+				}
+			}
+		}
+	}
+
+	
+}
 // Definition List -------------------------------------------------------------
 .definition-list{
 	background-color: yellow; 
