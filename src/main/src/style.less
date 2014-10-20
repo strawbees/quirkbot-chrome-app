@@ -38,6 +38,8 @@
 @visual-node-selected-bg-color: rgba(255,255,200, 0.8);
 @visual-node-focus-bg-color:rgba(255,255,200, 0.9);
 @connector-bg-color: white;
+@definition-item-button-bg-color: #fff;
+@definition-item-button-text-color: black;
 @delete-button-bg-color: #fff;
 @delete-button-text-color: red;
 @collection-adder-button-bg-color: #fff;
@@ -72,8 +74,10 @@
 	border: @button-border;
 	.box-shadow(0px 1px 0px 0px rgba(0,0,0,1));
 	.pointer-cursor();
+	.border-radius(100%);
 	background-color: @bg-color;
 	color: @text-color;
+	text-align: center;
 
 	&:hover{
 		background-color:@text-color;
@@ -120,7 +124,7 @@ input:focus {
 	.tabs{
 		position: absolute;
 		height: 90%;
-		right: 0;
+		left: 0;
 		bottom: 0;
 		//width: (100% - @definition-list-width);
 	}
@@ -157,13 +161,13 @@ input:focus {
 			text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 		}
 		&.visual:after{
-			content: 'Visual Editor';
+			content: 'Visual';
 		}
 		&.code:after{
-			content: 'Code Editor';
+			content: 'Text';
 		}
 		&.serial:after{
-			content: 'Serial Monitor';
+			content: 'Debug';
 		}
 	}
 }
@@ -242,16 +246,18 @@ input:focus {
 }
 // Definition List -------------------------------------------------------------
 .definition-list{
-	background-color: yellow; 
+	background-color: #ffffff; 
 	position: absolute;
 	top:@menu-height;
-	left: 0;
+	right: 0;
 	width: @definition-list-width;
 	min-height: (100% - @menu-height);
 }
 .definition-item{
 	position: relative;
 	height: 20px;
+	margin-left: 5px;
+	margin-top: 5px;
 
 	&.expanded{
 		height: auto;
@@ -267,6 +273,8 @@ input:focus {
 	}
 
 	.title{
+		height:15px;
+		line-height: 15px;
 		margin: 0;
 	}
 	
@@ -274,18 +282,27 @@ input:focus {
 		display: none;
 	}
 
-	.toggle{
+	/*.toggle{
 		position: absolute;
 		top: 0;
 		left: 0;
-	}
+	}*/
 
 	.insert{
 		position: absolute;
-		top: 0;
+		left: 0;
+		top:0;
 		right: 0;
-		width: 10%;
-		height: 100%;
+		width: 15px;
+		height: 15px;
+		.button(@definition-item-button-bg-color, @definition-item-button-text-color);
+		&:after{
+			display: block;
+			content: '\02b';
+			
+			font-weight: bold;
+			font-size: 12px;
+		}
 	}
 }
 // Visual Editor ---------------------------------------------------------------
@@ -293,7 +310,7 @@ input:focus {
 	background-color: @visual-editor-bg-color; 
 	position: absolute;
 	top:@menu-height;
-	left: 15%;
+	left: 0;
 	width: (100% - @definition-list-width);
 	min-height: (100% - @menu-height);
 	overflow: hidden;
@@ -536,18 +553,22 @@ input:focus {
 // Code Editor --------------------------------------------------------------
 .ui-code-editor{ 
 	position: absolute;
+	.box-sizing(border-box);
 	top:@menu-height;
-	left: 15%;
+	left: 0;
 	width: (100% - @definition-list-width);
 	min-height: (100% - @menu-height);
 	overflow: hidden;
+	padding: 20px;
+	background-color: #333;
+	color: #eeeeee;
 
 }
 // Serial Monitor --------------------------------------------------------------
 .ui-serial-monitor{ 
 	position: absolute;
 	top:@menu-height;
-	left: 15%;
+	left: 0;
 	width: (100% - @definition-list-width);
 	min-height: (100% - @menu-height);
 	overflow: hidden;

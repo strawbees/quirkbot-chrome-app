@@ -32,7 +32,7 @@ input:focus {
 .menu .tabs {
   position: absolute;
   height: 90%;
-  right: 0;
+  left: 0;
   bottom: 0;
 }
 .menu .tab {
@@ -82,13 +82,13 @@ input:focus {
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 .menu .tab.visual:after {
-  content: 'Visual Editor';
+  content: 'Visual';
 }
 .menu .tab.code:after {
-  content: 'Code Editor';
+  content: 'Text';
 }
 .menu .tab.serial:after {
-  content: 'Serial Monitor';
+  content: 'Debug';
 }
 .ui-authentication {
   position: absolute;
@@ -152,16 +152,24 @@ input:focus {
   display: none;
 }
 .definition-list {
-  background-color: yellow;
+  background-color: #ffffff;
   position: absolute;
   top: 7%;
-  left: 0;
+  right: 0;
   width: 15%;
   min-height: 93%;
 }
 .definition-item {
   position: relative;
   height: 20px;
+  margin-left: 5px;
+  margin-top: 5px;
+  /*.toggle{
+		position: absolute;
+		top: 0;
+		left: 0;
+	}*/
+
 }
 .definition-item.expanded {
   height: auto;
@@ -175,28 +183,55 @@ input:focus {
   padding-left: 20px;
 }
 .definition-item .title {
+  height: 15px;
+  line-height: 15px;
   margin: 0;
 }
 .definition-item .description {
   display: none;
 }
-.definition-item .toggle {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
 .definition-item .insert {
   position: absolute;
+  left: 0;
   top: 0;
   right: 0;
-  width: 10%;
-  height: 100%;
+  width: 15px;
+  height: 15px;
+  border: solid 1px #000000;
+  -webkit-box-shadow: 0px 1px 0px 0px #000000;
+  -moz-box-shadow: 0px 1px 0px 0px #000000;
+  -ms-box-shadow: 0px 1px 0px 0px #000000;
+  -o-box-shadow: 0px 1px 0px 0px #000000;
+  box-shadow: 0px 1px 0px 0px #000000;
+  cursor: -webkit-pointer;
+  cursor: -moz-pointer;
+  cursor: pointer;
+  -webkit-border-radius: 100%;
+  -moz-border-radius: 100%;
+  -ms-border-radius: 100%;
+  -o-border-radius: 100%;
+  border-radius: 100%;
+  background-color: #ffffff;
+  color: #000000;
+  text-align: center;
+}
+.definition-item .insert:hover {
+  background-color: #000000;
+}
+.definition-item .insert:hover:after {
+  color: #ffffff;
+}
+.definition-item .insert:after {
+  display: block;
+  content: '\02b';
+  font-weight: bold;
+  font-size: 12px;
 }
 .ui-visual-editor {
   background-color: #727272;
   position: absolute;
   top: 7%;
-  left: 15%;
+  left: 0;
   width: 85%;
   min-height: 93%;
   overflow: hidden;
@@ -257,8 +292,14 @@ input:focus {
   cursor: -webkit-pointer;
   cursor: -moz-pointer;
   cursor: pointer;
+  -webkit-border-radius: 100%;
+  -moz-border-radius: 100%;
+  -ms-border-radius: 100%;
+  -o-border-radius: 100%;
+  border-radius: 100%;
   background-color: #ffffff;
   color: #ff0000;
+  text-align: center;
   display: none;
 }
 .visual-node .delete:hover {
@@ -426,6 +467,7 @@ input:focus {
   cursor: -moz-pointer;
   cursor: pointer;
   color: #000000;
+  text-align: center;
   height: 100%;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -489,6 +531,7 @@ input:focus {
   cursor: -moz-pointer;
   cursor: pointer;
   color: #000000;
+  text-align: center;
   height: 100%;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -535,16 +578,24 @@ input:focus {
 }
 .ui-code-editor {
   position: absolute;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  -o-box-sizing: border-box;
+  box-sizing: border-box;
   top: 7%;
-  left: 15%;
+  left: 0;
   width: 85%;
   min-height: 93%;
   overflow: hidden;
+  padding: 20px;
+  background-color: #333;
+  color: #eeeeee;
 }
 .ui-serial-monitor {
   position: absolute;
   top: 7%;
-  left: 15%;
+  left: 0;
   width: 85%;
   min-height: 93%;
   overflow: hidden;

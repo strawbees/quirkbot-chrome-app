@@ -29,9 +29,8 @@ function (
 				else container.classList.remove('expanded');
 			});
 
-			var insert = document.createElement('button');
+			var insert = document.createElement('div');
 			insert.classList.add('insert');
-			insert.innerHTML = '+';
 			insert.addEventListener('click', function(){
 				var id = TREE.generateSafeNodeId(spec.name);
 				TREE.data[id] = {type: spec.type};
