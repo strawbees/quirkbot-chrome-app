@@ -1,0 +1,8 @@
+{
+	"name": "Led",
+	"type": "Led",
+	"inputs" : {
+		"in" : 0,
+		"pin" : -1
+	}
+}

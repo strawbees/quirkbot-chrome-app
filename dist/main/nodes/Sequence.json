@@ -1,0 +1,11 @@
+{
+	"name": "Sequence",
+	"type": "Sequence",
+	"icon" : "",
+	"collection" : true,
+	"inputs" : {
+		"trigger": 0,
+		"duration": 1
+	},
+	"out" : true
+}

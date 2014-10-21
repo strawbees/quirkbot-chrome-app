@@ -1,0 +1,11 @@
+{
+	"name": "Converter",
+	"type": "Converter",
+	"inputs" : {
+		"inMin" : 0,
+		"inMax" : 1,
+		"outMin" : 0,
+		"outMax" : 1
+	},
+	"out": true
+}

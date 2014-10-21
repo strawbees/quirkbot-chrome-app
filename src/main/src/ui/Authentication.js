@@ -31,7 +31,6 @@ function (
 
 			setupLogin(inner);
 			setupRegister(inner);
-
 			
 			if(Cloud.user) hide();
 			else show();

@@ -55,7 +55,7 @@ function (
 
 		
 			setTimeout(function(){
-				if(Parse.User.current()){
+				if(getUser()){
 					loggedIn.dispatch(Parse.User.current());
 				}
 				else {
