@@ -1,0 +1,10 @@
+{
+	"name": "List",
+	"type": "List",
+	"icon" : "",
+	"collection" : true,
+	"inputs" : {
+		"in" : 0
+	},
+	"out" : true
+}

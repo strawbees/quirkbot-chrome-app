@@ -1,0 +1,12 @@
+{
+	"name": "RGB Led",
+	"type": "RGBLed",
+	"inputs" : {
+		"in" : 0,
+		"hue" : 0,
+		"saturation" : 0,
+		"pinR" : -1,
+		"pinG" : -1,
+		"pinB" : -1
+	}
+}

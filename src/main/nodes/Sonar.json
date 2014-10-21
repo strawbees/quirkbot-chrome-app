@@ -1,0 +1,8 @@
+{
+	"name": "Sonar",
+	"type": "Sonar",
+	"inputs" : {
+		"pin" : -1
+	},
+	"out": true
+}
