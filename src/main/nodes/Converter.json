@@ -2,6 +2,7 @@
 	"name": "Converter",
 	"type": "Converter",
 	"inputs" : {
+		"in" : 0,
 		"inMin" : 0,
 		"inMax" : 1,
 		"outMin" : 0,
