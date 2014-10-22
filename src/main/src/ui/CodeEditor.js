@@ -187,6 +187,7 @@ function (
 
 
 			if(typeA.out && typeB.out){
+
 				if(nodeA.type < nodeB.type) return -1;
 				else if(nodeA.type > nodeB.type) return 1;
 			}
@@ -224,8 +225,10 @@ function (
 				if(!node.inputs) return;
 				Object.keys(node.inputs).forEach(function(inputId){
 					var connection = node.inputs[inputId];
+
 					if(isPrimitive(connection)) return;
 					if(isCollectionItem(inputId)) return;
+
 					var connectionArray = connection.split('.');
 					if(!connectionArray || connectionArray.length != 2) return;
 
@@ -234,6 +237,8 @@ function (
 						referenceNode.outputArray = [];
 					}
 					referenceNode.outputArray.push(instance + '.' + inputId);
+					
+					delete node.inputs[inputId];
 					delete node.inputs[inputId];
 				});
 			});
@@ -260,9 +265,25 @@ function (
 		var show = function(){
 			container.style.display = 'block';
 			update();
+			if (document.selection) {
+				var range = document.body.createTextRange();
+				range.moveToElementText(container);
+				range.select();
+			} else if (window.getSelection) {
+				var range = document.createRange();
+				range.selectNode(container);
+				window.getSelection().addRange(range);
+			}
 		}
 		var hide = function(){
 			container.style.display = 'none';
+			if (document.selection) {
+				document.selection.empty()
+			}
+			else if(window.getSelection){
+				window.getSelection().removeAllRanges()
+			}
+			
 		}
 
 		Object.defineProperty(self, 'show', {
