@@ -21,21 +21,21 @@ input:focus {
 .loading {
   background-color: red;
 }
-.menu {
+.ui-menu {
   background-color: #272727;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 7%;
+  height: 30px;
 }
-.menu .tabs {
+.ui-menu .tabs {
   position: absolute;
   height: 90%;
   left: 0;
   bottom: 0;
 }
-.menu .tab {
+.ui-menu .tab {
   position: relative;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -66,11 +66,11 @@ input:focus {
   box-shadow: 0px -2px 2px 0px rgba(0, 0, 0, 0.75);
   border-bottom: solid 1px rgba(255, 255, 255, 0.1);
 }
-.menu .tab:checked {
+.ui-menu .tab:checked {
   background-color: #727272;
   z-index: 1;
 }
-.menu .tab:after {
+.ui-menu .tab:after {
   display: block;
   color: white;
   text-align: center;
@@ -81,13 +81,13 @@ input:focus {
   vertical-align: middle;
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
-.menu .tab.visual:after {
+.ui-menu .tab.visual:after {
   content: 'Visual';
 }
-.menu .tab.code:after {
+.ui-menu .tab.code:after {
   content: 'Text';
 }
-.menu .tab.serial:after {
+.ui-menu .tab.serial:after {
   content: 'Debug';
 }
 .ui-authentication {
@@ -151,13 +151,14 @@ input:focus {
 .ui-authentication .inner .wrapper .message:empty {
   display: none;
 }
-.definition-list {
+.ui-definition-list {
   background-color: #ffffff;
   position: absolute;
-  top: 7%;
+  top: 30px;
   right: 0;
-  width: 15%;
-  min-height: 93%;
+  width: 200px;
+  height: calc(100% - 30px);
+  overflow: scroll;
 }
 .definition-item {
   position: relative;
@@ -230,11 +231,11 @@ input:focus {
 .ui-visual-editor {
   background-color: #727272;
   position: absolute;
-  top: 7%;
+  top: 30px;
   left: 0;
-  width: 85%;
-  min-height: 93%;
-  overflow: hidden;
+  width: calc(100% - 200px);
+  height: calc(100% - 30px);
+  overflow: scroll;
 }
 .visual-node {
   position: absolute;
@@ -583,22 +584,33 @@ input:focus {
   -ms-box-sizing: border-box;
   -o-box-sizing: border-box;
   box-sizing: border-box;
-  top: 7%;
+  top: 30px;
   left: 0;
-  width: 85%;
-  min-height: 93%;
-  overflow: hidden;
+  width: calc(100% - 200px);
+  height: calc(100% - 30px);
+  overflow: scroll;
   padding: 20px;
   background-color: #333;
   color: #eeeeee;
+  line-height: 18px;
+}
+.ui-code-editor::-moz-selection {
+  background: rgba(0, 0, 0, 0.99);
+}
+.ui-code-editor::-webkit-selection {
+  background: rgba(0, 0, 0, 0.99);
+}
+.ui-code-editor::selection {
+  background: rgba(0, 0, 0, 0.99);
+  padding: 10px;
 }
 .ui-serial-monitor {
   position: absolute;
-  top: 7%;
+  top: 30px;
   left: 0;
-  width: 85%;
-  min-height: 93%;
-  overflow: hidden;
+  width: calc(100% -  200px);
+  height: calc(100% -  30px);
+  overflow: scroll;
 }
 .ui-serial-monitor iframe {
   position: absolute;

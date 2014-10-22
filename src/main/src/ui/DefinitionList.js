@@ -16,7 +16,7 @@ function (
 
 		var init = function() {
 			container = document.createElement('div');
-			container.classList.add('definition-list');
+			container.classList.add('ui-definition-list');
 
 			Object.keys(DEFINITIONS.data).forEach(function(key) {
 				var item = new DefinitionItem(DEFINITIONS.data[key]);

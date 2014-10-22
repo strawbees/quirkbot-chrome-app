@@ -7,9 +7,9 @@
 @link-line-width: 2;
 @link-line-color: black;
 
-@menu-height: 7%;
+@menu-height: 30px;
 
-@definition-list-width: 15%;
+@definition-list-width: 200px;
 
 @visual-node-min-width: 150px;
 @visual-node-min-height: 30px;
@@ -113,7 +113,7 @@ input:focus {
 }
 
 // Menu -------------------------------------------------------------
-.menu{
+.ui-menu{
 	background-color: @menu-bg-color; 
 	position: absolute;
 	top:0;
@@ -245,13 +245,14 @@ input:focus {
 	
 }
 // Definition List -------------------------------------------------------------
-.definition-list{
+.ui-definition-list{
 	background-color: #ffffff; 
 	position: absolute;
 	top:@menu-height;
 	right: 0;
 	width: @definition-list-width;
-	min-height: (100% - @menu-height);
+	height: calc(~"100% -" @menu-height);
+	overflow: scroll;
 }
 .definition-item{
 	position: relative;
@@ -311,9 +312,9 @@ input:focus {
 	position: absolute;
 	top:@menu-height;
 	left: 0;
-	width: (100% - @definition-list-width);
-	min-height: (100% - @menu-height);
-	overflow: hidden;
+	width: calc(~"100% -" @definition-list-width);
+	height: calc(~"100% -" @menu-height);
+	overflow: scroll;
 }
 .visual-node{
 	position: absolute;
@@ -556,12 +557,24 @@ input:focus {
 	.box-sizing(border-box);
 	top:@menu-height;
 	left: 0;
-	width: (100% - @definition-list-width);
-	min-height: (100% - @menu-height);
-	overflow: hidden;
+	width: calc(~"100% -" @definition-list-width);
+	height: calc(~"100% -" @menu-height);
+	overflow: scroll;
 	padding: 20px;
 	background-color: #333;
 	color: #eeeeee;
+	line-height: 18px;
+
+	&::-moz-selection{
+		background: rgba(0,0,0, 0.99);
+	}
+	&::-webkit-selection{
+		background: rgba(0,0,0, 0.99);
+	}
+	&::selection{
+		background: rgba(0,0,0, 0.99);
+		padding: 10px;
+	}
 
 }
 // Serial Monitor --------------------------------------------------------------
@@ -569,9 +582,9 @@ input:focus {
 	position: absolute;
 	top:@menu-height;
 	left: 0;
-	width: (100% - @definition-list-width);
-	min-height: (100% - @menu-height);
-	overflow: hidden;
+	width: calc(~"100% - " @definition-list-width);
+	height: calc(~"100% - " @menu-height);
+	overflow: scroll;
 	iframe{
 		position: absolute;
 		width: 100%;

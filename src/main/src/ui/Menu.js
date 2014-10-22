@@ -19,7 +19,7 @@ function (
 
 		var init = function() {
 			container = document.createElement('div');
-			container.classList.add('menu');
+			container.classList.add('ui-menu');
 
 			setupTabs();
 
