@@ -10,24 +10,12 @@ function (
 	var DefinitionItem = function(spec){
 		var
 		self = this,
-		container,
-		selected;
+		container;
 
 		var init = function() {
 
 			container = document.createElement('div');
 			container.classList.add('definition-item');
-
-			var title = document.createElement('h5');
-			title.classList.add('title');
-			title.innerHTML = spec.name;
-			container.appendChild(title);
-
-			title.addEventListener('click', function(){
-				selected = !selected;
-				if(selected)container.classList.add('expanded');
-				else container.classList.remove('expanded');
-			});
 
 			var insert = document.createElement('div');
 			insert.classList.add('insert');
@@ -36,6 +24,20 @@ function (
 				TREE.data[id] = {type: spec.type};
 			});
 			container.appendChild(insert);
+
+			var title = document.createElement('h5');
+			title.classList.add('title');
+			title.innerHTML = spec.name;
+			container.appendChild(title);
+
+			title.addEventListener('click', function(){
+				if(container.dataset.expanded){
+					delete container.dataset.expanded;
+				}
+				else{
+					container.dataset.expanded = true;
+				}
+			});
 
 			var description = document.createElement('div');
 			description.classList.add('description');

@@ -1,4 +1,5 @@
 {
+	"groups": ["Movement"],
 	"name": "Servo Motor",
 	"type": "ServoMotor",
 	"icon" : "",

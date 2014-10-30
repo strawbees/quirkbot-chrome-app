@@ -1,4 +1,5 @@
 {
+	"groups": ["Signal"],
 	"name": "Randomizer",
 	"type": "Randomizer",
 	"out" : true

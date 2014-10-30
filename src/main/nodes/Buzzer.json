@@ -1,4 +1,5 @@
 {
+	"groups": ["Sound"],
 	"name": "Buzzer",
 	"type": "Buzzer",
 	"inputs" : {

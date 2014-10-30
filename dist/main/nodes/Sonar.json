@@ -1,4 +1,5 @@
 {
+	"groups": ["Sensors"],
 	"name": "Sonar",
 	"type": "Sonar",
 	"inputs" : {

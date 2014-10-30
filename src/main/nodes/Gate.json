@@ -1,4 +1,5 @@
 {
+	"groups": ["Logic"],
 	"name": "Gate",
 	"type": "Gate",
 	"out" : true,
