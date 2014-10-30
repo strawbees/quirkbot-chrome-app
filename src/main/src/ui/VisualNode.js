@@ -19,6 +19,8 @@ function (
 ){
 	"use strict";
 
+	var COLLECTION_ITEM_PARSE_REGEX = /^items\[([0-9]+)\]$/g;
+
 	var VisualNode = function(id, editor){
 		var
 		self = this,
@@ -107,7 +109,8 @@ function (
 				
 				});
 
-				// Monitor the connections, so we can create the inputs on the fly
+				// Monitor the connections, so we can create the collection
+				// inputs on the fly
 				eventsManager.add(TREE.connectionAdded, function(data){
 					var to = data.to.split('.');
 					if(to.length != 2) return;
@@ -115,6 +118,7 @@ function (
 
 					var inputId = to[1];
 
+					if(!isInputIdInCollection(inputId)) return;
 					if(collectionInputObjects[inputId]) return;
 
 					var inputIndex = getIndexFromCollectionInputId(inputId);
@@ -241,17 +245,19 @@ function (
 					delete TREE.data[id].inputs[inputId];
 
 				Object.keys(TREE.data[id].inputs).forEach(function(key){
+					if(!isInputIdInCollection(key)) return;
 					var index = getIndexFromCollectionInputId(key);
 					if(index <= inputIndex) return;
 					var newId = getIdFromCollectionInputIndex(index-1);
 
 					TREE.data[id].inputs[newId] = TREE.data[id].inputs[key];
 					delete TREE.data[id].inputs[key];
-				})
+				});
 
 				// "visually" remove last input
 				var lastIndex =  Object.keys(collectionInputObjects).length - 1;
 				var lastId =  getIdFromCollectionInputIndex(lastIndex);
+				inputObjects[lastId].destroy();
 	
 				collectionContainer.removeChild(collectionInputObjects[lastId].container);
 
@@ -261,9 +267,16 @@ function (
 
 		}
 
+		var isInputIdInCollection = function(inputId){
+			var regexArray = COLLECTION_ITEM_PARSE_REGEX.exec(inputId);
+			COLLECTION_ITEM_PARSE_REGEX.lastIndex = 0; // reset regex
+			if(!regexArray) return false;
+			if(regexArray.length != 2) return false;
+			return true;
+		}
 		var getIndexFromCollectionInputId = function(inputId){
-			var regex = /^items\[([0-9]+)\]$/g;
-			var regexArray = regex.exec(inputId);
+			var regexArray = COLLECTION_ITEM_PARSE_REGEX.exec(inputId);
+			COLLECTION_ITEM_PARSE_REGEX.lastIndex = 0; // reset regex
 
 			var inputIndex = parseInt(regexArray[1]);
 			return inputIndex;
