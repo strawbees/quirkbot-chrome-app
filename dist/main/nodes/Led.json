@@ -1,4 +1,5 @@
 {
+	"groups": ["Light"],
 	"name": "Led",
 	"type": "Led",
 	"inputs" : {
