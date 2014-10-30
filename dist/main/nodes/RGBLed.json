@@ -1,4 +1,5 @@
 {
+	"groups": ["Light"],
 	"name": "RGB Led",
 	"type": "RGBLed",
 	"inputs" : {
