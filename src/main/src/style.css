@@ -160,7 +160,8 @@ input:focus {
   right: 0;
   width: 200px;
   height: calc(100% - 30px);
-  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .ui-definition-list * {
   -webkit-user-select: none;
@@ -266,7 +267,7 @@ input:focus {
   left: 0;
   width: calc(100% - 200px);
   height: calc(100% - 30px);
-  overflow: scroll;
+  overflow: auto;
 }
 .visual-node {
   position: absolute;
