@@ -266,7 +266,8 @@ input:focus {
 	right: 0;
 	width: @definition-list-width;
 	height: calc(~"100% -" @menu-height);
-	overflow: scroll;
+	overflow-x: hidden;
+	overflow-y: auto;
 
 	*{
 		.user-select(none);
@@ -359,7 +360,7 @@ input:focus {
 	left: 0;
 	width: calc(~"100% -" @definition-list-width);
 	height: calc(~"100% -" @menu-height);
-	overflow: scroll;
+	overflow: auto;
 }
 .visual-node{
 	position: absolute;

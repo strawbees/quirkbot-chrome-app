@@ -19,8 +19,6 @@ function (
 ){
 	"use strict";
 
-
-	var s = new Signal();
 	var App = function(){
 		var 
 		self = this;
