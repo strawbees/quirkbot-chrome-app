@@ -241,6 +241,11 @@ function (
 			input.container.appendChild(deleteButton);
 
 			eventsManager.addEventListener(deleteButton, 'click', function(){
+				// If the object is new (nothing was connected to it), there will
+				// be no 'inputs' on the TREE, so we create one one the fly
+				if(! TREE.data[id].inputs ) TREE.data[id].inputs = {};
+
+
 				if(TREE.data[id].inputs[inputId])
 					delete TREE.data[id].inputs[inputId];
 
