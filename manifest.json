@@ -1,0 +1,30 @@
+{
+	"name": "Quirkbot",
+	"version": "0.0.1",
+	"description": "Allows you to program Quirkbots directly from your browser.",
+	"default_locale": "en",
+	"icons": {
+		"16": "icons/icon16.png",
+		"48": "icons/icon48.png",
+		"128": "icons/icon128.png"
+	},
+	"app": {
+		"background": {
+			"scripts": [
+				"src/bg/main.js",
+				"src/bg/ChromeExternalAPIServer.js"
+			],
+			"persistent": false
+		}
+	},
+	"externally_connectable": {
+		"matches": [
+			"*://quirkbot.dev/*"
+		]
+	},
+	"permissions": [
+		"serial",
+		"usb",
+		"*://quirkbot.dev/*"
+	]
+}
