@@ -1,6 +1,28 @@
 @import "vendor.less";
 @import "reset.css";
 
+
+// Temp create fake upload button
+#upload{
+	.button(white, black);
+	.border-radius(10%);
+	text-transform: uppercase;
+	font-weight: bold;
+	padding: 10px;
+
+	&:hover{
+		color: white;
+	}
+	&:active{
+		background-color: yellow;
+		color: black;
+	}
+	padding: 5px 10px;
+	float: right;
+	margin: 3px 15px;
+	.user-select(none);
+}
+
 // Variables -------------------------------------------------------------------
 @font-family: monospace;
 
