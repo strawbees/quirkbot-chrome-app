@@ -181,6 +181,7 @@ function (
 				'BP1','BP2','BP3','BP4','BP5','BP6',
 				'WAVE_SINE','WAVE_SQUARE','WAVE_TRIANGLE','WAVE_PULSE','WAVE_RAMP_UP','WAVE_RAMP_DOWN',
 				'LM','RM','LE','RE',
+				'LL','RL','RA','H','LA',
 				'LLF','RLF','RAF','HF','LAF',
 				'LLB','RLB','RAB','HB','LAB'
 			]
