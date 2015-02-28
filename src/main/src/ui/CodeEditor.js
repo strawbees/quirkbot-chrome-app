@@ -176,6 +176,15 @@ function (
 			return inputIndex;
 		}
 		var isPrimitive = function(connection){
+			var constants = [
+				'A0','A1','A2','A3','A4','A6','A7','A8','A9','A10', 'A11',
+				'BP1','BP2','BP3','BP4','BP5','BP6',
+				'WAVE_SINE','WAVE_SQUARE','WAVE_TRIANGLE','WAVE_PULSE','WAVE_RAMP_UP','WAVE_RAMP_DOWN',
+				'LM','RM','LE','RE',
+				'LLF','RLF','RAF','HF','LAF',
+				'LLB','RLB','RAB','HB','LAB'
+			]
+			if(constants.indexOf(connection) != -1) return true;
 			return (connection - parseFloat( connection ) + 1) >= 0;
 		}
 
