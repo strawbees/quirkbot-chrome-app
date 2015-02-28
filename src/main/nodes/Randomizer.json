@@ -3,7 +3,7 @@
 	"name": "Randomizer",
 	"type": "Randomizer",
 	"inputs" : {
-		"interval" : 0.033,
+		"interval" : 0.033
 	},
 	"out" : true
 }
