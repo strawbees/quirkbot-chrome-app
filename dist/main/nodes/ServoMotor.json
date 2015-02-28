@@ -1,6 +1,6 @@
 {
 	"groups": ["Movement"],
-	"name": "Servo Motor",
+	"name": "Servo",
 	"type": "ServoMotor",
 	"icon" : "",
 	"inputs" : {
