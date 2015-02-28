@@ -2,6 +2,7 @@
 	"Led" : "nodes/Led.json",
 	"RGBLed" : "nodes/RGBLed.json",
 	"ServoMotor" : "nodes/ServoMotor.json",
+	"ContinuousServoMotor" : "nodes/ContinuousServoMotor.json",
 	"Buzzer" : "nodes/Buzzer.json",
 	"AnalogSensor" : "nodes/AnalogSensor.json",
 	"Sonar" : "nodes/Sonar.json",
