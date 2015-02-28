@@ -23,6 +23,11 @@ function (
 
 			setupTabs();
 
+			// Temp create fake upload button
+			var upload = document.createElement('div');
+			upload.id = 'upload';
+			upload.innerHTML = 'upload';
+			container.appendChild(upload);
 		}
 
 		var setupTabs = function(){
