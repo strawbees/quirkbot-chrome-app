@@ -1,0 +1,9 @@
+{
+	"groups": ["General"],
+	"name": "Output",
+	"type": "OutputVoltage",
+	"inputs" : {
+		"in" : 0,
+		"place" : -1
+	}
+}

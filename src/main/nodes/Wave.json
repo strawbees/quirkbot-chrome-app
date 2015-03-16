@@ -4,6 +4,8 @@
 	"type": "Wave",
 	"inputs" : {
 		"duration" : 1,
+		"min" : 0,
+		"max" : 1,
 		"type" : 0,
 		"offset" : 0
 	},
