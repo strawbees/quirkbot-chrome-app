@@ -3,7 +3,7 @@
 	"name": "Analog Sensor",
 	"type": "AnalogSensor",
 	"inputs" : {
-		"pin" : -1
+		"place" : -1
 	},
 	"out": true
 }

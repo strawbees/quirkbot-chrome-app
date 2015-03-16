@@ -1,10 +1,12 @@
 {
 	"Led" : "nodes/Led.json",
-	"RGBLed" : "nodes/RGBLed.json",
+	"DualColorLed" : "nodes/DualColorLed.json",
+	"OutputVoltage" : "nodes/OutputVoltage.json",
 	"ServoMotor" : "nodes/ServoMotor.json",
 	"ContinuousServoMotor" : "nodes/ContinuousServoMotor.json",
 	"Buzzer" : "nodes/Buzzer.json",
 	"AnalogSensor" : "nodes/AnalogSensor.json",
+	"SqueezeSensor" : "nodes/SqueezeSensor.json",
 	"Sonar" : "nodes/Sonar.json",
 	"Wave" : "nodes/Wave.json",
 	"Randomizer" : "nodes/Randomizer.json",

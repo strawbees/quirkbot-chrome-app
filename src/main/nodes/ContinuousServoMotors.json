@@ -1,7 +1,7 @@
 {
 	"groups": ["Movement"],
-	"name": "Servo",
-	"type": "ServoMotor",
+	"name": "Continuous Servo",
+	"type": "ContinuousServoMotor",
 	"icon" : "",
 	"inputs" : {
 		"in" : 0,
