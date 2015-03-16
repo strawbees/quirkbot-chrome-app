@@ -23,9 +23,10 @@ function (
 
 		var init = function(){
 			var api = new ChromeExtensionAPIClient('hmopjkdaifcnbhfgilhelghojhmabbhm')
-			
+
 			var echo = api.generateCall('echo');
 			var getDevices = api.generateCall('getDevices');
+			var connectToDevice = api.generateCall('connectToDevice');
 			var testInvalidError = api.generateCall('this call do not exist');
 			
 			echo('hello', 'world')
@@ -35,6 +36,8 @@ function (
 			})
 			.then(function(devices){
 				console.log(devices)
+				var promises = []
+
 				return testInvalidError()
 			})
 			.catch(function(error){

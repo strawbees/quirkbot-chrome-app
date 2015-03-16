@@ -14,6 +14,11 @@ http.createServer(function (request, response) {
 		response.end();
 		return;
 	}
+	if(request.url.substring(0, 6) == '/ping/'){
+		console.log('Ping', Date(), ': ' + decodeURI(request.url.substring(6)));
+		response.end();
+		return;
+	}
 
 	request.addListener('end', function () {
 		file.serve(request, response);
