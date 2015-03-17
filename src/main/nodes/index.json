@@ -1,7 +1,7 @@
 {
 	"Led" : "nodes/Led.json",
 	"DualColorLed" : "nodes/DualColorLed.json",
-	"OutputVoltage" : "nodes/OutputVoltage.json",
+	"VoltageOutput" : "nodes/VoltageOutput.json",
 	"ServoMotor" : "nodes/ServoMotor.json",
 	"ContinuousServoMotor" : "nodes/ContinuousServoMotor.json",
 	"Buzzer" : "nodes/Buzzer.json",

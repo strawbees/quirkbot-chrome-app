@@ -1,7 +1,7 @@
 {
 	"groups": ["General"],
 	"name": "Output",
-	"type": "OutputVoltage",
+	"type": "VoltageOutput",
 	"inputs" : {
 		"in" : 0,
 		"place" : -1
