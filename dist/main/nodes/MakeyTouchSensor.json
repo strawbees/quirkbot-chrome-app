@@ -1,0 +1,9 @@
+{
+	"groups": ["Sensors"],
+	"name": "Makey Touch Sensor",
+	"type": "MakeyTouchSensor",
+	"inputs" : {
+		"place" : -1
+	},
+	"out": true
+}
