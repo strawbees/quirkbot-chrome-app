@@ -1,9 +1,10 @@
 {
 	"groups": ["Light"],
-	"name": "Led",
-	"type": "Led",
+	"name": "Dual Color Led",
+	"type": "DualColorLed",
 	"inputs" : {
 		"in" : 0,
+		"color" : 0,
 		"place" : -1
 	}
 }
