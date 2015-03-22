@@ -57,6 +57,8 @@ function (
 				};
 			}
 			
+			console.log('aaa')
+
 			adapter.onReceive.add(onReceive);
 			adapter.onReceiveError.add(onReceiveError);
 
