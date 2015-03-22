@@ -7,7 +7,7 @@
   "dependencies": {
     "happy-toolkit" : "x",
     "requirejs" : "x",
-    "node-static": "x",
+    "http-server": "x",
     "almond" : "x"
     },
   "license": "WTFPL",
