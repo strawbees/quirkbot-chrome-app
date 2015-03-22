@@ -47,8 +47,8 @@ function (
 
 			// Google Chrome
 			if(typeof chrome !== 'undefined'){
-				//var api = new ChromeExtensionAPIClient('lgjmgejpijgfefnfbkdjoepoebaeafin')
-				var api = new ChromeExtensionAPIClient('hmopjkdaifcnbhfgilhelghojhmabbhm');
+				var api = new ChromeExtensionAPIClient('lgjmgejpijgfefnfbkdjoepoebaeafin')
+				//var api = new ChromeExtensionAPIClient('hmopjkdaifcnbhfgilhelghojhmabbhm');
 				for (var i = 0; i < methods.length; i++) {
 					adapter[methods[i]] = api.generateMethod(methods[i]);
 				};
