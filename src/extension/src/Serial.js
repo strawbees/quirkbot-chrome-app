@@ -64,7 +64,12 @@ function (
 			adapter.getDevices()
 			.then(function(devices){
 				console.log(devices)
-				return adapter.connect(devices[4].path, {bitrate: 9600})
+				return adapter.connect(
+					devices[4].path, 
+					{
+						bitrate: 115200
+					}
+				)
 			})
 			.then(function(connection){
 				openConnection = connection;
@@ -72,6 +77,13 @@ function (
 					adapter.disconnect(connection.connectionId)
 					adapter.onReceive.remove(onReceive);
 				}, 5000)
+
+				setInterval(function(){
+					adapter.getConnections()
+					.then(function(connections){
+						console.log(connections)
+					})
+				}, 500)
 			})
 			.catch(function (error) {
 				console.error(error);
