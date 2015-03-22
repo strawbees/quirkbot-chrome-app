@@ -72,12 +72,19 @@ function (
 				)
 			})
 			.then(function(connection){
-				openConnection = connection;
+				if(connection){
+					console.log('connected!')
+					openConnection = connection;
 				setTimeout(function(){
 					adapter.disconnect(connection.connectionId)
 					adapter.onReceive.remove(onReceive);
 				}, 5000)
 
+				}
+				else{
+					console.log('cannot coonect')
+				}
+				
 				setInterval(function(){
 					adapter.getConnections()
 					.then(function(connections){
