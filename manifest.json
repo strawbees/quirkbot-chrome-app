@@ -1,6 +1,6 @@
 {
 	"name": "Quirkbot",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Allows you to program Quirkbots directly from your browser.",
 	"default_locale": "en",
 	"icons": {
@@ -18,14 +18,13 @@
 	},
 	"externally_connectable": {
 		"matches": [
-			"*://quirkbot.dev/*"
+			"*://quirkbot.com/*",
+			"*://quirkbot.dev/*",			
+			"*://quirkbot.herokuapp.com/*"
 		]
 	},
 	"permissions": [
 		"serial",
-		"usb",
-		"*://quirkbot.dev/*",
-		"*://quirkbot.herokuapp.com/*",
-		"*://quirkbot.com/*"
+		"usb"		
 	]
 }
