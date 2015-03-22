@@ -3,23 +3,88 @@
 
 	var ChromeExternalAPIServer = function(){
 		var self = this,
-		api = {};
+		methods = {},
+		events = {};
 
-		var registerCall = function(key, call){
-			api[key] = call;
+		var registerMethod = function(key, method){
+			methods[key] = method;
 		}
-		var validateCall = function(callName, callArguments){
+		var registerEvent = function(key, add, remove){
+			events[key] = {
+				add: add,
+				remove: remove,
+				listeners : []
+			};
+		}
+		var validateMethod = function(methodName, methodArguments){
 			var promise = function(resolve, reject){
 				try{
-					api[callName].apply(window, callArguments)
+					methods[methodName].apply(window, methodArguments)
 					.then(resolve)
 					.catch(reject);
 				}
 				catch(e){
 					reject({
-						step: 'validateAction',
+						step: 'validateMethod',
 						originalError: e.toString(),
-						message: 'Action "' + callName + '" is invalid.'
+						message: 'Action "' + methodName + '" is invalid.'
+					});
+				}
+				
+
+			};
+			return new Promise(promise);
+		}
+
+		var validateEventAdder = function(eventName, uuid, listener){
+			var promise = function(resolve, reject){
+				try{
+					var handler = {
+						eventName: eventName,
+						uuid: uuid,
+						listener: listener
+					}
+					events[eventName].listeners.push(handler);
+					events[eventName].add(listener)
+					.then(function (argument) {
+						resolve(handler)
+					})
+					.catch(reject);
+				}
+				catch(e){
+					reject({
+						step: 'validateEventAdder',
+						originalError: e.toString(),
+						message: 'Action "' + eventName + '" is invalid.'
+					});
+				}
+				
+
+			};
+			return new Promise(promise);
+		}
+		var validateEventRemover = function(eventName, uuid, listener){
+			var promise = function(resolve, reject){
+				try{
+					var handler;
+					events[eventName].listeners.forEach(function(_handler, index){
+						if(_handler.uuid == uuid){
+							handler = _handler
+							events[eventName].listeners.splice(index, 1);
+						}
+					})
+				
+					events[eventName].remove(handler.listener)
+					.then(function (argument) {
+						resolve(handler)
+					})
+					.catch(reject);
+				}
+				catch(e){
+					reject({
+						step: 'validateEventRemover',
+						originalError: e.toString(),
+						message: 'Action "' + eventName + '" is invalid.'
 					});
 				}
 				
@@ -29,29 +94,81 @@
 		}
 
 		chrome.runtime.onConnectExternal.addListener(function(port) {
-			port.onMessage.addListener(function(message) {
-
-				var response = {
-					success: true
+			var onPortMessage = function(message) {
+				if(message.addListener){
+					var listener = function() {
+						var response = {
+							arguments: arguments
+						}
+						port.postMessage(response);
+					}
+					validateEventAdder(message.name, message.uuid, listener)
+					.then(function (handler) {
+						handler.port = port;
+					})
+					.catch(function(error){
+						var response = {
+							error : error
+						}
+						port.postMessage(response);
+					})
+				
 				}
-				validateCall(message.name, message.arguments)
-				.then(function(){
-					response.success = true;
-					response.arguments = arguments;
-					port.postMessage(response);
-					port.disconnect();
+				else if(message.removeListener){
+					
+					validateEventRemover(message.name, message.uuid)
+					.then(function (handler) {
+						port.disconnect();
+					})
+					.catch(function(error){
+						port.disconnect();
+					})
+				
+				}
+				else{
+					var response = {}
+					validateMethod(message.name, message.arguments)
+					.then(function(){
+						response.arguments = arguments;
+						port.postMessage(response);
+						port.disconnect();
+
+
+					})
+					.catch(function(error){
+						response.error = error;
+						port.postMessage(response);
+						port.disconnect();
+					})
+				}		
+			};
+			var onPortDisconnect = function(port){
+				port.onMessage.removeListener(onPortMessage);
+				port.onDisconnect.removeListener(onPortDisconnect);
+
+				// Check if there was any listeners attached to that port
+				Object.keys(events).forEach(function (eventName) {
+				
+					events[eventName].listeners.forEach(function (handler) {
+						
+						if(handler.port == port)
+							validateEventRemover(
+								handler.eventName,
+								handler.uuid,
+								handler.listener
+							);
+					})
 				})
-				.catch(function(error){
-					response.success = false;
-					response.error = error;
-					port.postMessage(response);
-					port.disconnect();
-				})	
-			});
+			}
+			port.onMessage.addListener(onPortMessage);
+			port.onDisconnect.addListener(onPortDisconnect);
 		});
 
-		Object.defineProperty(self, 'registerCall', {
-			value: registerCall
+		Object.defineProperty(self, 'registerMethod', {
+			value: registerMethod
+		});
+		Object.defineProperty(self, 'registerEvent', {
+			value: registerEvent
 		});
 	}
 
