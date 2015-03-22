@@ -8,7 +8,6 @@ server.createServer({
 	root : root,
 	before: [
 		function (request, response) {
-			console.log(request.url)
 			if(request.url == '/'){
 				response.writeHead(302,	{Location: redirect});
 				return response.end();
