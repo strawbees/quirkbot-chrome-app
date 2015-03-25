@@ -11,8 +11,9 @@
 	"app": {
 		"background": {
 			"scripts": [
-				"src/bg/main.js",
-				"src/bg/ChromeExternalAPIServer.js"
+				"src/ChromeExternalAPIServer.js",
+				"src/serial.js",
+				"src/main.js"				
 			]
 		}
 	},

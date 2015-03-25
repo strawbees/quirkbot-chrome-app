@@ -1,12 +1,15 @@
-
-
-
 // API -------------------------------------------------------------------------
 // METHODS
 var getDevices = function(){
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.getDevices(resolve);
+			chrome.serial.getDevices(
+				checkRuntimeError(
+					resolve,
+					reject,
+					'getDevices'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -20,7 +23,16 @@ var getDevices = function(){
 var connect = function (path, options) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.connect(path, options, resolve);
+			options.name = options.name || path;
+			chrome.serial.connect(
+				path,
+				options,
+				checkRuntimeError(
+					resolve,
+					reject,
+					'connect'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -34,7 +46,15 @@ var connect = function (path, options) {
 var update = function (connectionId, options) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.update(connectionId, options, resolve);
+			chrome.serial.update(
+				connectionId, 
+				options, 
+				checkRuntimeError(
+					resolve,
+					reject,
+					'update'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -48,7 +68,14 @@ var update = function (connectionId, options) {
 var disconnect = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.disconnect(connectionId, resolve);
+			chrome.serial.disconnect(
+				connectionId,
+				checkRuntimeError(
+					resolve,
+					reject,
+					'disconnect'
+				)
+			);			
 		}
 		catch(e){
 			reject({
@@ -62,7 +89,15 @@ var disconnect = function (connectionId) {
 var setPaused = function (connectionId, paused) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.setPaused(connectionId, paused, resolve);
+			chrome.serial.setPaused(
+				connectionId,
+				paused,
+				checkRuntimeError(
+					resolve,
+					reject,
+					'setPaused'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -76,7 +111,14 @@ var setPaused = function (connectionId, paused) {
 var getInfo = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.getInfo(connectionId, resolve);
+			chrome.serial.getInfo(
+				connectionId, 
+				checkRuntimeError(
+					resolve,
+					reject,
+					'getInfo'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -90,7 +132,13 @@ var getInfo = function (connectionId) {
 var getConnections = function () {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.getConnections(resolve);
+			chrome.serial.getConnections(
+				checkRuntimeError(
+					resolve,
+					reject,
+					'getConnections'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -104,7 +152,15 @@ var getConnections = function () {
 var send = function (connectionId, data) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.send(connectionId, data, resolve);
+			chrome.serial.send(
+				connectionId, 
+				data,
+				checkRuntimeError(
+					resolve,
+					reject,
+					'send'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -118,7 +174,14 @@ var send = function (connectionId, data) {
 var flush = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.flush(connectionId, resolve);
+			chrome.serial.flush(
+				connectionId, 
+				checkRuntimeError(
+					resolve,
+					reject,
+					'flush'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -132,7 +195,14 @@ var flush = function (connectionId) {
 var getControlSignals = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.getControlSignals(connectionId, resolve);
+			chrome.serial.getControlSignals(
+				connectionId, 
+				checkRuntimeError(
+					resolve,
+					reject,
+					'getControlSignals'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -146,7 +216,14 @@ var getControlSignals = function (connectionId) {
 var setControlSignals = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
-			chrome.serial.setControlSignals(connectionId, resolve);
+			chrome.serial.setControlSignals(
+				connectionId, 
+				checkRuntimeError(
+					resolve,
+					reject,
+					'setControlSignals'
+				)
+			);
 		}
 		catch(e){
 			reject({
@@ -165,7 +242,6 @@ var addReceiveListener = function (listener) {
 			var wrapperListener = {
 				fn: function (message) {
 					message.data = binaryToString(message.data); 
-					console.log('we hoo', message)
 					listener(message);
 				},
 				listener : listener
@@ -237,6 +313,19 @@ var removeReceiveErrorListener = function (listener) {
 	return new Promise(promise);
 }
 // UTILS -----------------------------------------------------------------------
+var checkRuntimeError = function(resolve, reject, rejectStep){
+	return function(){
+		if(chrome.runtime.lastError){
+			reject({
+				step: rejectStep,
+				message: chrome.runtime.lastError.message
+			});
+		}
+		else{
+			resolve.apply(this, arguments)
+		}
+	};	
+}
 function stringToBinary(s) {
 	var binary = new ArrayBuffer(s.length);
 	var buffer = new Uint8Array(binary);
@@ -253,73 +342,3 @@ function binaryToString(binary) {
 	}
 	return String.fromCharCode.apply(null, chars);
 }
-var log = function () {
-	console.log(arguments)
-	var string = '';
-	for (var i = 0; i < arguments.length; i++) {
-		string += JSON.stringify(arguments[i]) + ' - ';
-	};
-	var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", 'http://quirkbot.dev:8080/ping/' + encodeURI(string), true );
-    xmlHttp.send( null );
-}
-
-// Intilize API ----------------------------------------------------------------
-var inited = false;
-var init = function() {
-	if(inited) return;
-
-	inited = true;
-	var api = new ChromeExternalAPIServer();
-	api.registerMethod('getDevices', getDevices);
-	api.registerMethod('connect', connect);
-	api.registerMethod('update', update);
-	api.registerMethod('disconnect', disconnect);
-	api.registerMethod('setPaused', setPaused);
-	api.registerMethod('getInfo', getInfo);
-	api.registerMethod('getConnections', getConnections);
-	api.registerMethod('send', send);
-	api.registerMethod('flush', flush);
-	api.registerMethod('getControlSignals', getControlSignals);
-	api.registerMethod('setControlSignals', setControlSignals);
-	api.registerEvent('onReceive', addReceiveListener, removeReceiveListener);
-	api.registerEvent('onReceiveError', addReceiveErrorListener, removeReceiveErrorListener);
-}
-chrome.runtime.onInstalled.addListener(init);
-chrome.runtime.onStartup.addListener(init);
-
-// Heartbeat to keep the app alive ---------------------------------------------
-chrome.runtime.onMessage.addListener(function(){});
-setInterval(function (argument) {
-	chrome.runtime.sendMessage(chrome.runtime.id, '', function () {});
-}, 5000)
-
-
-
-/*
-chrome.runtime.onStartup.addListener(function(details){ 
-	log(details, 'onStartup')});
-chrome.runtime.onInstalled.addListener(function(details){
-	log(details, 'onInstalled')});
-chrome.runtime.onSuspend.addListener(function(details){ 
-	log(details, 'onSuspend');
-
-	chrome.runtime.reload() });
-chrome.runtime.onSuspendCanceled.addListener(function(details){ 
-	log(details, 'onSuspendCanceled')});
-chrome.runtime.onUpdateAvailable.addListener(function(details){
-	log(details, 'onUpdateAvailable')});
-chrome.runtime.onBrowserUpdateAvailable.addListener(function(details){
-	log(details, 'onBrowserUpdateAvailable')});
-chrome.runtime.onConnect.addListener(function(details){
-	log(details, 'onConnect')});
-chrome.runtime.onConnectExternal.addListener(function(details){
-	log(details, 'onConnectExternal')});
-chrome.runtime.onMessage.addListener(function(details){
-	log(details, 'onMessage')});
-chrome.runtime.onMessageExternal.addListener(function(details){
-	log(details, 'onMessageExternal')});
-chrome.runtime.onRestartRequired.addListener(function(details){
-	log(details, 'onRestartRequired')});
-
-*/
