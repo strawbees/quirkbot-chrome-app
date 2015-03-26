@@ -85,7 +85,7 @@ var onSerialReceive = function(message){
 			connection.quirkbot.updated = Date.now();
 			
 			// fire event
-			dispatchConnectionsStashUpdatedEvent();
+			dispatchQuirkbotsChangeEvent();
 			continue;	
 		}
 
@@ -95,29 +95,30 @@ var onSerialReceive = function(message){
 
 // Connection stash ------------------------------------------------------------
 var connectionsStash = {};
-var connectionsStashUpdatedListeners = [];
-var addConnectionsStashUpdatedListener = function (listener) {
+var quirkbotsChangeListeners = [];
+var addQuirkbotsChangeListener = function (listener) {
 	var promise = function(resolve, reject){
 		var exists = false;
-		for (var i = connectionsStashListeners.length - 1; i >= 0; i--) {
-			if(connectionsStashListeners[i] == listener){
-				connectionsStashListeners.splice(index, 1);
+	
+		for (var i = quirkbotsChangeListeners.length - 1; i >= 0; i--) {
+			if(quirkbotsChangeListeners[i] == listener){
+				quirkbotsChangeListeners.splice(index, 1);
 				exists = true;
 				break;
 			}
 		};
 		if(!exists)
-			connectionsStashListeners.push(listener)
+			quirkbotsChangeListeners.push(listener);
 
 		resolve(listener);
 	};
 	return new Promise(promise);
 }
-var removeConnectionsStashUpdatedListener = function (listener) {
+var removeQuirkbotsChangeListener = function (listener) {
 	var promise = function(resolve, reject){
-		for (var i = connectionsStashListeners.length - 1; i >= 0; i--) {
-			if(connectionsStashListeners[i] == listener){
-				connectionsStashListeners.splice(index, 1);
+		for (var i = quirkbotsChangeListeners.length - 1; i >= 0; i--) {
+			if(quirkbotsChangeListeners[i] == listener){
+				quirkbotsChangeListeners.splice(i, 1);
 				break;
 			}
 		};
@@ -125,9 +126,18 @@ var removeConnectionsStashUpdatedListener = function (listener) {
 	};
 	return new Promise(promise);
 }
-var dispatchConnectionsStashUpdatedEvent = function(){
-	Object.keys(connectionsStashUpdatedListeners).forEach(function(listener){
-		listener(connectionsStash)
+var dispatchQuirkbotsChangeEvent = function(){
+	if(!quirkbotsChangeListeners.length) return;
+
+	var connectionIdsWithQuirkbot = Object.keys(connectionsStash).filter(function(connectionId){
+		return connectionsStash[connectionId].detected;
+	})
+	var quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+		return connectionsStash[connectionId].quirkbot;
+	})
+
+	quirkbotsChangeListeners.forEach(function(listener){	
+		listener(quirkbots)
 	});
 }
 
@@ -232,7 +242,7 @@ var removeLostConnections = function(){
 			delete connectionsStash[connectionId];
 			
 			// fire event
-			dispatchConnectionsStashUpdatedEvent();
+			dispatchQuirkbotsChangeEvent();
 
 			var promise = new Promise(function(resolve, reject){				
 				serialApi.disconnect(connectionId)
@@ -403,7 +413,7 @@ var monitorSingleConnection = function(connection){
 				console.log('connected', connection)
 
 				// fire event
-				dispatchConnectionsStashUpdatedEvent();
+				dispatchQuirkbotsChangeEvent();
 
 				resolve(connection);
 			}
@@ -413,7 +423,7 @@ var monitorSingleConnection = function(connection){
 				delete connectionsStash[connection.connectionInfo.connectionId];
 				
 				// fire event
-				dispatchConnectionsStashUpdatedEvent();
+				dispatchQuirkbotsChangeEvent();
 
 				serialApi.disconnect(connection.connectionInfo.connectionId)
 				.then(function(){
@@ -438,9 +448,9 @@ var initQuirkbotApi = function() {
 	// Register external API calls
 	var api = new ChromeExternalAPIServer();
 	api.registerEvent(
-		'connectionsStashUpdated',
-		addConnectionsStashUpdatedListener,
-		removeConnectionsStashUpdatedListener
+		'quirkbotsChange',
+		addQuirkbotsChangeListener,
+		removeQuirkbotsChangeListener
 	);
 }
 chrome.runtime.onInstalled.addListener(initQuirkbotApi);
