@@ -12,7 +12,8 @@
 		"background": {
 			"scripts": [
 				"src/ChromeExternalAPIServer.js",
-				"src/serial.js",
+				"src/Serial.js",
+				"src/Quirkbot.js",
 				"src/main.js"				
 			]
 		}

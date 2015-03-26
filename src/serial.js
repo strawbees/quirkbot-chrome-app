@@ -1,10 +1,11 @@
 // API -------------------------------------------------------------------------
+var serialApi = {};
 // METHODS
-var getDevices = function(){
+serialApi.getDevices = function(){
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.getDevices(
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'getDevices'
@@ -20,14 +21,14 @@ var getDevices = function(){
 	};
 	return new Promise(promise);
 }
-var connect = function (path, options) {
+serialApi.connect = function (path, options) {
 	var promise = function(resolve, reject){
 		try{
 			options.name = options.name || path;
 			chrome.serial.connect(
 				path,
 				options,
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'connect'
@@ -43,13 +44,13 @@ var connect = function (path, options) {
 	};
 	return new Promise(promise);
 }
-var update = function (connectionId, options) {
+serialApi.update = function (connectionId, options) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.update(
 				connectionId, 
 				options, 
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'update'
@@ -65,12 +66,12 @@ var update = function (connectionId, options) {
 	};
 	return new Promise(promise);
 }
-var disconnect = function (connectionId) {
+serialApi.disconnect = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.disconnect(
 				connectionId,
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'disconnect'
@@ -86,13 +87,13 @@ var disconnect = function (connectionId) {
 	};
 	return new Promise(promise);
 }
-var setPaused = function (connectionId, paused) {
+serialApi.setPaused = function (connectionId, paused) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.setPaused(
 				connectionId,
 				paused,
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'setPaused'
@@ -108,12 +109,12 @@ var setPaused = function (connectionId, paused) {
 	};
 	return new Promise(promise);
 }
-var getInfo = function (connectionId) {
+serialApi.getInfo = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.getInfo(
 				connectionId, 
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'getInfo'
@@ -129,11 +130,11 @@ var getInfo = function (connectionId) {
 	};
 	return new Promise(promise);
 }
-var getConnections = function () {
+serialApi.getConnections = function () {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.getConnections(
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'getConnections'
@@ -149,13 +150,13 @@ var getConnections = function () {
 	};
 	return new Promise(promise);
 }
-var send = function (connectionId, data) {
+serialApi.send = function (connectionId, data) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.send(
 				connectionId, 
 				data,
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'send'
@@ -171,12 +172,12 @@ var send = function (connectionId, data) {
 	};
 	return new Promise(promise);
 }
-var flush = function (connectionId) {
+serialApi.flush = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.flush(
 				connectionId, 
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'flush'
@@ -192,12 +193,12 @@ var flush = function (connectionId) {
 	};
 	return new Promise(promise);
 }
-var getControlSignals = function (connectionId) {
+serialApi.getControlSignals = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.getControlSignals(
 				connectionId, 
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'getControlSignals'
@@ -213,12 +214,12 @@ var getControlSignals = function (connectionId) {
 	};
 	return new Promise(promise);
 }
-var setControlSignals = function (connectionId) {
+serialApi.setControlSignals = function (connectionId) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.setControlSignals(
 				connectionId, 
-				checkRuntimeError(
+				serialApi.checkRuntimeError(
 					resolve,
 					reject,
 					'setControlSignals'
@@ -235,18 +236,18 @@ var setControlSignals = function (connectionId) {
 	return new Promise(promise);
 }
 // LISTENERS
-var onReceiveListeners = [];
-var addReceiveListener = function (listener) {
+serialApi.onReceiveListeners = [];
+serialApi.addReceiveListener = function (listener) {
 	var promise = function(resolve, reject){
 		try{
 			var wrapperListener = {
 				fn: function (message) {
-					message.data = binaryToString(message.data); 
+					message.data = serialApi.binaryToString(message.data); 
 					listener(message);
 				},
 				listener : listener
 			}
-			onReceiveListeners.push(wrapperListener);
+			serialApi.onReceiveListeners.push(wrapperListener);
 			chrome.serial.onReceive.addListener(wrapperListener.fn);
 			resolve(wrapperListener.fn)
 		}
@@ -259,15 +260,15 @@ var addReceiveListener = function (listener) {
 	};
 	return new Promise(promise);
 }
-var removeReceiveListener = function (listener) {
+serialApi.removeReceiveListener = function (listener) {
 	var promise = function(resolve, reject){
 		try{
 			var wrapperListener;
-			onReceiveListeners.forEach(function (_wrapperListener, index) {
+			serialApi.onReceiveListeners.forEach(function (_wrapperListener, index) {
 				if(wrapperListener) return;
 				if(_wrapperListener.listener == listener){
 					wrapperListener = _wrapperListener;
-					onReceiveListeners.splice(index, 1);
+					serialApi.onReceiveListeners.splice(index, 1);
 				}
 			})
 			chrome.serial.onReceive.removeListener(wrapperListener.fn);
@@ -282,7 +283,8 @@ var removeReceiveListener = function (listener) {
 	};
 	return new Promise(promise);
 }
-var addReceiveErrorListener = function (listener) {
+
+serialApi.addReceiveErrorListener = function (listener) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.onReceiveError.addListener(listener);
@@ -297,7 +299,7 @@ var addReceiveErrorListener = function (listener) {
 	};
 	return new Promise(promise);
 }
-var removeReceiveErrorListener = function (listener) {
+serialApi.removeReceiveErrorListener = function (listener) {
 	var promise = function(resolve, reject){
 		try{
 			chrome.serial.onReceiveError.removeListener(listener);
@@ -313,7 +315,7 @@ var removeReceiveErrorListener = function (listener) {
 	return new Promise(promise);
 }
 // UTILS -----------------------------------------------------------------------
-var checkRuntimeError = function(resolve, reject, rejectStep){
+serialApi.checkRuntimeError = function(resolve, reject, rejectStep){
 	return function(){
 		if(chrome.runtime.lastError){
 			reject({
@@ -326,7 +328,7 @@ var checkRuntimeError = function(resolve, reject, rejectStep){
 		}
 	};	
 }
-function stringToBinary(s) {
+serialApi.stringToBinary = function(s) {
 	var binary = new ArrayBuffer(s.length);
 	var buffer = new Uint8Array(binary);
 	for (var i = 0; i < s.length; i++) {
@@ -334,7 +336,7 @@ function stringToBinary(s) {
 	}
 	return binary;
 }
-function binaryToString(binary) {
+serialApi.binaryToString = function(binary) {
 	var buffer = new Uint8Array(binary);
 	var chars = [];
 	for (var i = 0; i < buffer.length; ++i) {
@@ -342,3 +344,28 @@ function binaryToString(binary) {
 	}
 	return String.fromCharCode.apply(null, chars);
 }
+
+// Register for external access ------------------------------------------------
+/*var serialApiInited = false;
+var initSerialApi = function() {
+	if(serialApiInited) return;
+	serialApiInited = true;
+
+	// Register external API calls
+	var api = new ChromeExternalAPIServer();
+	api.registerMethod('getDevices', serialApi.getDevices);
+	api.registerMethod('connect', serialApi.connect);
+	api.registerMethod('update', serialApi.update);
+	api.registerMethod('disconnect', serialApi.disconnect);
+	api.registerMethod('setPaused', serialApi.setPaused);
+	api.registerMethod('getInfo', serialApi.getInfo);
+	api.registerMethod('getConnections', serialApi.getConnections);
+	api.registerMethod('send', serialApi.send);
+	api.registerMethod('flush', serialApi.flush);
+	api.registerMethod('getControlSignals', serialApi.getControlSignals);
+	api.registerMethod('setControlSignals', serialApi.setControlSignals);
+	api.registerEvent('onReceive', serialApi.addReceiveListener, serialApi.removeReceiveListener);
+	api.registerEvent('onReceiveError', serialApi.addReceiveErrorListener, serialApi.removeReceiveErrorListener);
+}
+chrome.runtime.onInstalled.addListener(initSerialApi);
+chrome.runtime.onStartup.addListener(initSerialApi);*/
