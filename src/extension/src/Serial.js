@@ -47,8 +47,8 @@ function (
 
 			// Google Chrome
 			if(typeof chrome !== 'undefined'){
-				var api = new ChromeExtensionAPIClient('lgjmgejpijgfefnfbkdjoepoebaeafin')
-				//var api = new ChromeExtensionAPIClient('hmopjkdaifcnbhfgilhelghojhmabbhm');
+				//var api = new ChromeExtensionAPIClient('lgjmgejpijgfefnfbkdjoepoebaeafin')
+				var api = new ChromeExtensionAPIClient('hmopjkdaifcnbhfgilhelghojhmabbhm');
 				for (var i = 0; i < methods.length; i++) {
 					adapter[methods[i]] = api.generateMethod(methods[i]);
 				};
@@ -57,18 +57,18 @@ function (
 				};
 			}
 			
-			console.log('aaa')
-
 			adapter.onReceive.add(onReceive);
 			adapter.onReceiveError.add(onReceiveError);
 
+			console.log('init!')
 			adapter.getDevices()
 			.then(function(devices){
 				console.log(devices)
 				return adapter.connect(
 					devices[4].path, 
 					{
-						bitrate: 115200
+						bitrate: 115200,
+						persistent: true
 					}
 				)
 			})
@@ -76,22 +76,18 @@ function (
 				if(connection){
 					console.log('connected!')
 					openConnection = connection;
-				setTimeout(function(){
-					adapter.disconnect(connection.connectionId)
-					adapter.onReceive.remove(onReceive);
-				}, 5000)
+					setTimeout(function(){
+						adapter.disconnect(connection.connectionId)
+						.catch(function(e){
+							console.log('disconnect errro',e)
+						})
+						adapter.onReceive.remove(onReceive);
+					}, 5000)
 
 				}
 				else{
 					console.log('cannot coonect')
 				}
-				
-				setInterval(function(){
-					adapter.getConnections()
-					.then(function(connections){
-						console.log(connections)
-					})
-				}, 500)
 			})
 			.catch(function (error) {
 				console.error(error);
