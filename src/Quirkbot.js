@@ -4,6 +4,24 @@
 var QuirkbotChromeExtension = function(){
 	var self = this;
 
+	// Process entry point -----------------------------------------------------
+	var init = function() {
+		// Register external API calls
+		var api = new ChromeExternalAPIServer();
+		api.registerEvent(
+			'structureChange',
+			addStructureChangeListener,
+			removeStructureChangeListener
+		);
+
+		// Add a listener to all incoming serial messages
+		chrome.serial.onReceive.addListener(onSerialReceive);
+		
+		// Clear any existing connection and start monitoring Quirkbots
+		closeAllSerialConnections()
+		.then(continuouslyMonitorQuirkbots);
+	}
+
 	// Serial monitoring -------------------------------------------------------
 	var QB_UUID_SIZE = 16;
 	var REPORT_START_DELIMITER = 250; 
@@ -91,7 +109,7 @@ var QuirkbotChromeExtension = function(){
 				connection.quirkbot.updated = Date.now();
 				
 				// fire event
-				dispatchQuirkbotsChangeEvent();
+				dispatchStructureChangeEvent();
 				continue;	
 			}
 
@@ -101,30 +119,32 @@ var QuirkbotChromeExtension = function(){
 
 	// Connection stash --------------------------------------------------------
 	var connectionsStash = {};
-	var quirkbotsChangeListeners = [];
-	var addQuirkbotsChangeListener = function (listener) {
+	var structure = {
+		quirkbots : []
+	};
+	var structureChangeListeners = [];
+	var addStructureChangeListener = function (listener) {
 		var promise = function(resolve, reject){
 			var exists = false;
-		
-			for (var i = quirkbotsChangeListeners.length - 1; i >= 0; i--) {
-				if(quirkbotsChangeListeners[i] == listener){
-					quirkbotsChangeListeners.splice(index, 1);
+			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
+				if(structureChangeListeners[i] == listener){
+					structureChangeListeners.splice(index, 1);
 					exists = true;
 					break;
 				}
 			};
 			if(!exists)
-				quirkbotsChangeListeners.push(listener);
+				structureChangeListeners.push(listener);
 
 			resolve(listener);
 		};
 		return new Promise(promise);
 	}
-	var removeQuirkbotsChangeListener = function (listener) {
+	var removeStructureChangeListener = function (listener) {
 		var promise = function(resolve, reject){
-			for (var i = quirkbotsChangeListeners.length - 1; i >= 0; i--) {
-				if(quirkbotsChangeListeners[i] == listener){
-					quirkbotsChangeListeners.splice(i, 1);
+			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
+				if(structureChangeListeners[i] == listener){
+					structureChangeListeners.splice(i, 1);
 					break;
 				}
 			};
@@ -132,39 +152,40 @@ var QuirkbotChromeExtension = function(){
 		};
 		return new Promise(promise);
 	}
-	var dispatchQuirkbotsChangeEvent = function(){
-		if(!quirkbotsChangeListeners.length) return;
-
+	var manageQuirkbotsInStructure = function(){
 		var connectionIdsWithQuirkbot = Object.keys(connectionsStash).filter(function(connectionId){
 			return connectionsStash[connectionId].detected;
 		})
-		var quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+		structure.quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
 			return connectionsStash[connectionId].quirkbot;
 		})
+	}
+	var dispatchStructureChangeEvent = function(){
+		if(!structureChangeListeners.length) return;
 
-		quirkbotsChangeListeners.forEach(function(listener){	
-			listener(quirkbots)
+		structureChangeListeners.forEach(function(listener){	
+			listener(structure);
 		});
 	}
 
-	// Process entry point -----------------------------------------------------
-	var init = function() {
-		// Register external API calls
-		var api = new ChromeExternalAPIServer();
-		api.registerEvent(
-			'quirkbotsChange',
-			addQuirkbotsChangeListener,
-			removeQuirkbotsChangeListener
-		);
-
-		// Add a listener to all incoming serial messages
-		chrome.serial.onReceive.addListener(onSerialReceive);
-		
-		// Clear any existing connection and start monitoring Quirkbots
-		closeAllSerialConnections()
-		.then(continuouslyDetectQuirkbots);
+	// Atomic processes -------------------------------------------------------
+	var run = function(){
+		var payload = arguments;
+		return new Promise(function(resolve){
+			resolve.apply(null, payload);
+		});
 	}
-
+	var delay = function(millis){
+		return function(){
+			var payload = arguments;
+			var promise = function(resolve, reject){
+				setTimeout(function(){
+					resolve.apply(null, payload);
+				}, millis)
+			}
+			return new Promise(promise);
+		}
+	}
 	// Level 0 processes -------------------------------------------------------
 	var closeAllSerialConnections = function(){
 		var promise = function(resolve, reject){
@@ -201,18 +222,21 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var continuouslyDetectQuirkbots = function(){
+	var continuouslyMonitorQuirkbots = function(){
 		var promise = function(resolve, reject){
-			monitorQuirkbots()
-			.then(function(){
-				setTimeout(continuouslyDetectQuirkbots, 2000);
-			})
+			resolvePendingUploads()
+			.then(monitorQuirkbots)
+			.then(delay(2000))
+			// recurse...
+			.then(continuouslyMonitorQuirkbots)
 			.catch(function(error){
 				console.error(
 					'Error in Quirbot monitor routine, rescheduling anyway.', 
 					error
 				);
-				setTimeout(continuouslyDetectQuirkbots, 2000);
+				run()
+				.then(delay(2000))
+				.then(continuouslyMonitorQuirkbots)
 			});
 			resolve();
 		}
@@ -220,6 +244,12 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	// Level 1 processes -------------------------------------------------------
+	var resolvePendingUploads = function(){
+		var promise = function(resolve, reject){
+			resolve();
+		}
+		return new Promise(promise);
+	}
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			removeLostConnections()
@@ -249,8 +279,11 @@ var QuirkbotChromeExtension = function(){
 				console.log('disconnected', connection);
 				delete connectionsStash[connectionId];
 				
+				// Manage quirkbots in strucure
+				manageQuirkbotsInStructure();
+				
 				// fire event
-				dispatchQuirkbotsChangeEvent();
+				dispatchStructureChangeEvent();
 
 				var promise = new Promise(function(resolve, reject){				
 					SerialApi.disconnect(connectionId)
@@ -414,14 +447,20 @@ var QuirkbotChromeExtension = function(){
 	var monitorSingleConnection = function(connection){
 		var promise = function(resolve, reject){
 			connectionsStash[connection.connectionInfo.connectionId] = connection;
-			setTimeout(function(){
+
+			run()
+			.then(delay(2000))
+			.then(function(){
 				if(Date.now() - connection.quirkbot.updated < 200){
 					// Quirkbot detected!
 					connection.detected = true;
 					console.log('connected', connection)
 
+					// Manage quirkbots in strucure
+					manageQuirkbotsInStructure();
+
 					// fire event
-					dispatchQuirkbotsChangeEvent();
+					dispatchStructureChangeEvent();
 
 					resolve(connection);
 				}
@@ -431,7 +470,7 @@ var QuirkbotChromeExtension = function(){
 					delete connectionsStash[connection.connectionInfo.connectionId];
 					
 					// fire event
-					dispatchQuirkbotsChangeEvent();
+					dispatchStructureChangeEvent();
 
 					SerialApi.disconnect(connection.connectionInfo.connectionId)
 					.then(function(){
@@ -442,7 +481,7 @@ var QuirkbotChromeExtension = function(){
 					})
 				}
 				
-			}, 2000);	
+			});	
 		};
 		return new Promise(promise);
 	}
