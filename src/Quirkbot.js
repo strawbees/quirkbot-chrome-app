@@ -19,7 +19,7 @@ var QuirkbotChromeExtension = function(){
 		
 		// Clear any existing connection and start monitoring Quirkbots
 		closeAllSerialConnections()
-		.then(continuouslyDetectQuirkbots);
+		.then(continuouslyMonitorQuirkbots);
 	}
 
 	// Serial monitoring -------------------------------------------------------
@@ -168,6 +168,24 @@ var QuirkbotChromeExtension = function(){
 		});
 	}
 
+	// Atomic processes -------------------------------------------------------
+	var run = function(){
+		var payload = arguments;
+		return new Promise(function(resolve){
+			resolve.apply(null, payload);
+		});
+	}
+	var delay = function(millis){
+		return function(){
+			var payload = arguments;
+			var promise = function(resolve, reject){
+				setTimeout(function(){
+					resolve.apply(null, payload);
+				}, millis)
+			}
+			return new Promise(promise);
+		}
+	}
 	// Level 0 processes -------------------------------------------------------
 	var closeAllSerialConnections = function(){
 		var promise = function(resolve, reject){
@@ -204,18 +222,21 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var continuouslyDetectQuirkbots = function(){
+	var continuouslyMonitorQuirkbots = function(){
 		var promise = function(resolve, reject){
-			monitorQuirkbots()
-			.then(function(){
-				setTimeout(continuouslyDetectQuirkbots, 2000);
-			})
+			resolvePendingUploads()
+			.then(monitorQuirkbots)
+			.then(delay(2000))
+			// recurse...
+			.then(continuouslyMonitorQuirkbots)
 			.catch(function(error){
 				console.error(
 					'Error in Quirbot monitor routine, rescheduling anyway.', 
 					error
 				);
-				setTimeout(continuouslyDetectQuirkbots, 2000);
+				run()
+				.then(delay(2000))
+				.then(continuouslyMonitorQuirkbots)
 			});
 			resolve();
 		}
@@ -223,6 +244,12 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	// Level 1 processes -------------------------------------------------------
+	var resolvePendingUploads = function(){
+		var promise = function(resolve, reject){
+			resolve();
+		}
+		return new Promise(promise);
+	}
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			removeLostConnections()
@@ -420,7 +447,10 @@ var QuirkbotChromeExtension = function(){
 	var monitorSingleConnection = function(connection){
 		var promise = function(resolve, reject){
 			connectionsStash[connection.connectionInfo.connectionId] = connection;
-			setTimeout(function(){
+
+			run()
+			.then(delay(2000))
+			.then(function(){
 				if(Date.now() - connection.quirkbot.updated < 200){
 					// Quirkbot detected!
 					connection.detected = true;
@@ -451,7 +481,7 @@ var QuirkbotChromeExtension = function(){
 					})
 				}
 				
-			}, 2000);	
+			});	
 		};
 		return new Promise(promise);
 	}
