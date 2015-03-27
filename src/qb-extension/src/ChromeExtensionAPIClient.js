@@ -86,8 +86,9 @@
 					uuid: uuid,
 					callback: callback
 				};
-
+				console.log('port', port)
 				port.onMessage.addListener(function(response){
+
 					if(!response.error) {
 						var args = [];
 						Object.keys(response.arguments).forEach(function(index){

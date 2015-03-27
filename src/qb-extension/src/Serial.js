@@ -16,7 +16,7 @@ function (
 		var init = function(){
 			// Create the serial adapter
 			var methods = [];
-			var events = ["quirkbotsChange"];
+			var events = ["structureChange"];
 			
 			adapter = {}
 
@@ -32,12 +32,19 @@ function (
 				};
 			}
 			
-			adapter.quirkbotsChange.add(onQuirkbotsChange);
+			adapter.structureChange.add(onStructureChange)
+			.then(function(a){
+				console.log(a)
+			})
+			.catch(function(error){
+				console.error('Problem adding event');
+				console.log(error)
+			});
 
 		}
 
-		var onQuirkbotsChange = function (quirkbots) {
-			console.log(quirkbots);
+		var onStructureChange = function (structure) {
+			console.log(structure);
 		}
 
 
