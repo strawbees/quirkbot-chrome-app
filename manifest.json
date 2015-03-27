@@ -14,6 +14,7 @@
 				"src/ChromeExternalAPIServer.js",
 				"src/Serial.js",
 				"src/Quirkbot.js",
+				"src/module.js",
 				"src/main.js"				
 			]
 		}
