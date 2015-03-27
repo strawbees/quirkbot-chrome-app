@@ -102,6 +102,7 @@
 						}
 						port.postMessage(response);
 					}
+
 					validateEventAdder(message.name, message.uuid, listener)
 					.then(function (handler) {
 						handler.port = port;

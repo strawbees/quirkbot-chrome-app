@@ -4,7 +4,7 @@ var inited = false;
 var init = function() {
 	if(inited) return;
 	inited = true;
-	//quirkbotChromeExtension.init();
+	quirkbotChromeExtension.init();
 }
 chrome.runtime.onInstalled.addListener(init);
 chrome.runtime.onStartup.addListener(init);
