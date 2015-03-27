@@ -3,15 +3,19 @@
 
 var QuirkbotChromeExtension = function(){
 	var self = this;
+	
+	var connectionsStash = {};
+	var model = {quirkbots : [] };
+	var modelChangeListeners = [];
 
 	// Process entry point -----------------------------------------------------
 	var init = function() {
 		// Register external API calls
 		var api = new ChromeExternalAPIServer();
 		api.registerEvent(
-			'structureChange',
-			addStructureChangeListener,
-			removeStructureChangeListener
+			'modelChange',
+			addModelChangeListener,
+			removeModelChangeListener
 		);
 
 		// Add a listener to all incoming serial messages
@@ -20,6 +24,9 @@ var QuirkbotChromeExtension = function(){
 		// Clear any existing connection and start monitoring Quirkbots
 		closeAllSerialConnections()
 		.then(continuouslyMonitorQuirkbots);
+
+		// Dipatch events everytime the model changes
+		Object.observe(model, dispatchModelChangeEvent);
 	}
 
 	// Serial monitoring -------------------------------------------------------
@@ -53,6 +60,7 @@ var QuirkbotChromeExtension = function(){
 
 				// Extract UUID	
 				var uuidBufer = [];
+				var uuid;
 				while(connection.buffer[0] != UUID_DELIMITER){
 					uuidBufer = uuidBufer.concat(connection.buffer.splice(0,1));
 				}
@@ -65,7 +73,7 @@ var QuirkbotChromeExtension = function(){
 				}
 				connection.buffer.splice(0,1);
 				if(uuidBufer.length){
-					connection.quirkbot.uuid = String.fromCharCode.apply(null,uuidBufer);
+					uuid = String.fromCharCode.apply(null,uuidBufer);
 				}
 				
 
@@ -105,11 +113,10 @@ var QuirkbotChromeExtension = function(){
 				connection.buffer = [];
 
 				// If we got here, we got a complete message!
+				connection.quirkbot.uuid = uuid;
 				connection.quirkbot.nodes = nodesContent;
 				connection.quirkbot.updated = Date.now();
 				
-				// fire event
-				dispatchStructureChangeEvent();
 				continue;	
 			}
 
@@ -117,34 +124,29 @@ var QuirkbotChromeExtension = function(){
 		}
 	}
 
-	// Connection stash --------------------------------------------------------
-	var connectionsStash = {};
-	var structure = {
-		quirkbots : []
-	};
-	var structureChangeListeners = [];
-	var addStructureChangeListener = function (listener) {
+	// Model ---------------------------------------------------------------
+	var addModelChangeListener = function (listener) {
 		var promise = function(resolve, reject){
 			var exists = false;
-			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
-				if(structureChangeListeners[i] == listener){
-					structureChangeListeners.splice(index, 1);
+			for (var i = modelChangeListeners.length - 1; i >= 0; i--) {
+				if(modelChangeListeners[i] == listener){
+					modelChangeListeners.splice(index, 1);
 					exists = true;
 					break;
 				}
 			};
 			if(!exists)
-				structureChangeListeners.push(listener);
+				modelChangeListeners.push(listener);
 
 			resolve(listener);
 		};
 		return new Promise(promise);
 	}
-	var removeStructureChangeListener = function (listener) {
+	var removeModelChangeListener = function (listener) {
 		var promise = function(resolve, reject){
-			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
-				if(structureChangeListeners[i] == listener){
-					structureChangeListeners.splice(i, 1);
+			for (var i = modelChangeListeners.length - 1; i >= 0; i--) {
+				if(modelChangeListeners[i] == listener){
+					modelChangeListeners.splice(i, 1);
 					break;
 				}
 			};
@@ -152,19 +154,24 @@ var QuirkbotChromeExtension = function(){
 		};
 		return new Promise(promise);
 	}
-	var manageQuirkbotsInStructure = function(){
+	var manageQuirkbotsInModel = function(){
+		// Figure out which connections have detected quirkbots
 		var connectionIdsWithQuirkbot = Object.keys(connectionsStash).filter(function(connectionId){
+			// Remove all mutation observers
+			Object.unobserve(connectionsStash[connectionId].quirkbot, dispatchModelChangeEvent)
+			// Return true only for detected quirkbots
 			return connectionsStash[connectionId].detected;
 		})
-		structure.quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+		model.quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+			// Add mutation observers to detected quirkbots
+			Object.observe(connectionsStash[connectionId].quirkbot, dispatchModelChangeEvent)
+			// Return quirkbots
 			return connectionsStash[connectionId].quirkbot;
 		})
 	}
-	var dispatchStructureChangeEvent = function(){
-		if(!structureChangeListeners.length) return;
-
-		structureChangeListeners.forEach(function(listener){	
-			listener(structure);
+	var dispatchModelChangeEvent = function(){
+		modelChangeListeners.forEach(function(listener){	
+			listener(model);
 		});
 	}
 
@@ -279,11 +286,9 @@ var QuirkbotChromeExtension = function(){
 				console.log('disconnected', connection);
 				delete connectionsStash[connectionId];
 				
-				// Manage quirkbots in strucure
-				manageQuirkbotsInStructure();
+				// Manage quirkbots in model
+				manageQuirkbotsInModel();
 				
-				// fire event
-				dispatchStructureChangeEvent();
 
 				var promise = new Promise(function(resolve, reject){				
 					SerialApi.disconnect(connectionId)
@@ -457,10 +462,7 @@ var QuirkbotChromeExtension = function(){
 					console.log('connected', connection)
 
 					// Manage quirkbots in strucure
-					manageQuirkbotsInStructure();
-
-					// fire event
-					dispatchStructureChangeEvent();
+					manageQuirkbotsInModel();
 
 					resolve(connection);
 				}
@@ -469,9 +471,6 @@ var QuirkbotChromeExtension = function(){
 					// stack.
 					delete connectionsStash[connection.connectionInfo.connectionId];
 					
-					// fire event
-					dispatchStructureChangeEvent();
-
 					SerialApi.disconnect(connection.connectionInfo.connectionId)
 					.then(function(){
 						resolve(connection);
