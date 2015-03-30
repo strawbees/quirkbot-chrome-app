@@ -485,7 +485,7 @@ Avr109Board.prototype.exitBootloader_ = function(doneCb) {
 exports.NewAvr109Board = NewAvr109Board;
 exports.AVR = AVR;
 
-},{"./binary.js":3,"./clock.js":4,"./logging.js":6,"./status.js":7}],3:[function(require,module,exports){
+},{"./binary.js":3,"./clock.js":4,"./logging.js":7,"./status.js":8}],3:[function(require,module,exports){
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -547,6 +547,9 @@ RealClock.prototype.nowMillis = function() {
 exports.RealClock = RealClock;
 
 },{}],5:[function(require,module,exports){
+window.CHROME_ARDUINO_AVR109 = require("./avr109.js");
+window.CHROME_ARDUINO_INTEL_HEX = require("./intelhex.js").IntelHEX;
+},{"./avr109.js":2,"./intelhex.js":6}],6:[function(require,module,exports){
 /*
  Portions copyright 2013 Julian Fernando Vidal | https://github.com/poisa/JVIntelHex
  Version 1.0
@@ -937,7 +940,7 @@ IntelHEX.prototype.parse = function() {
 
 exports.IntelHEX = IntelHEX;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1010,7 +1013,7 @@ exports.setVisibleLogLevel = setVisibleLogLevel;
 exports.setConsoleLogLevel = setConsoleLogLevel;
 exports.configureVisibleLogging = configureVisibleLogging;
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1039,7 +1042,7 @@ Status.Error = function(message) {
 
 exports.Status = Status;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1499,7 +1502,7 @@ Stk500Board.prototype.readChunkReadData_ = function(data, address, length, curre
 exports.NewStk500Board = NewStk500Board;
 exports.STK = STK;
 
-},{"./binary.js":3,"./logging.js":6,"./status.js":7}],9:[function(require,module,exports){
+},{"./binary.js":3,"./logging.js":7,"./status.js":8}],10:[function(require,module,exports){
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -1616,6 +1619,4 @@ Uploader.prototype.uploadCompiledSketch_ = function(hexData, deviceName, protoco
 exports.pad = pad;
 exports.Uploader = Uploader;
 
-window.Uploader = Uploader;
-
-},{"./avr109.js":2,"./binary.js":3,"./intelhex.js":5,"./logging.js":6,"./stk500.js":8}]},{},[1,2,3,4,5,6,7,8,9]);
+},{"./avr109.js":2,"./binary.js":3,"./intelhex.js":6,"./logging.js":7,"./stk500.js":9}]},{},[1,2,3,4,5,6,7,8,9,10]);

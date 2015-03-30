@@ -11,10 +11,11 @@
 	"app": {
 		"background": {
 			"scripts": [
+				"src/chrome-arduino.js",
 				"src/ChromeExternalAPIServer.js",
 				"src/Serial.js",
+				"src/HexUploader.js",
 				"src/Quirkbot.js",
-				"src/module.js",
 				"src/main.js"				
 			]
 		}

@@ -3,15 +3,28 @@
 
 var QuirkbotChromeExtension = function(){
 	var self = this;
+	
+	var connectionsStash = {};
+	var model = {
+		uploading :false,
+		quirkbots : []
+	};
+	var modelChangeListeners = [];
+
+
 
 	// Process entry point -----------------------------------------------------
 	var init = function() {
 		// Register external API calls
 		var api = new ChromeExternalAPIServer();
+		api.registerMethod(
+			'upload',
+			upload
+		);
 		api.registerEvent(
-			'structureChange',
-			addStructureChangeListener,
-			removeStructureChangeListener
+			'modelChange',
+			addModelChangeListener,
+			removeModelChangeListener
 		);
 
 		// Add a listener to all incoming serial messages
@@ -20,6 +33,80 @@ var QuirkbotChromeExtension = function(){
 		// Clear any existing connection and start monitoring Quirkbots
 		closeAllSerialConnections()
 		.then(continuouslyMonitorQuirkbots);
+
+		// Dipatch events everytime the model changes
+		Object.observe(model, dispatchModelChangeEvent);
+	}
+
+	// Upload ------------------------------------------------------------------
+	var upload = function(quirkbotUuid, hexString){
+		var promise = function(resolve, reject){
+
+			var connection;
+			for (var connectionId in connectionsStash){
+				if(connectionsStash[connectionId].quirkbot.uuid == quirkbotUuid){
+					connection = connectionsStash[connectionId];
+				}
+			};
+
+			var quirkbot;
+			for (var i = 0; i < model.quirkbots.length; i++) {
+				if(model.quirkbots[i].uuid == quirkbotUuid){
+					quirkbot = model.quirkbots[i];
+					break;
+				}
+			};
+
+			if(!quirkbot){
+				// Invalid UUID
+				reject('Invalid UUID');
+				return;
+			}
+
+			if(!hexString){
+				// Invalid UUID
+				reject('No Hex String');
+				return;
+			}
+
+
+
+			if(quirkbot.upload.pending){
+				// There is already an upload going on...
+				reject('Already uploading');
+				return;
+			}
+
+
+
+			
+			//------------------------------------------------------------------
+			quirkbot.upload.progress = 0;
+			quirkbot.upload.pending = true;			
+
+		
+			var hexUploader = new HexUploader();
+			
+			var onStatus = function(status){
+
+			}
+
+			hexUploader.init(connection, hexString, onStatus)
+			.then(function(){
+				console.log('success')
+				quirkbot.upload.pending = false;
+				quirkbot.upload.success = true;
+				resolve(quirkbot);
+			})
+			.catch(function(error){
+				quirkbot.upload.pending = false;
+				quirkbot.upload.fail = true;
+				reject(error);
+			})
+
+
+		}
+		return new Promise(promise);
 	}
 
 	// Serial monitoring -------------------------------------------------------
@@ -31,8 +118,12 @@ var QuirkbotChromeExtension = function(){
 	var NODE_CONTENT_DELIMITER = 253; 
 
 	var onSerialReceive = function(message){
+
 		var connection = connectionsStash[message.connectionId];
 		if(!connection)	return;
+
+		// do nothing if there is a upload going on 
+		if(connection.quirkbot.upload.pending) return;
 
 
 		var buffer = new Uint8Array(message.data);
@@ -53,6 +144,7 @@ var QuirkbotChromeExtension = function(){
 
 				// Extract UUID	
 				var uuidBufer = [];
+				var uuid;
 				while(connection.buffer[0] != UUID_DELIMITER){
 					uuidBufer = uuidBufer.concat(connection.buffer.splice(0,1));
 				}
@@ -65,7 +157,7 @@ var QuirkbotChromeExtension = function(){
 				}
 				connection.buffer.splice(0,1);
 				if(uuidBufer.length){
-					connection.quirkbot.uuid = String.fromCharCode.apply(null,uuidBufer);
+					uuid = String.fromCharCode.apply(null,uuidBufer);
 				}
 				
 
@@ -105,11 +197,10 @@ var QuirkbotChromeExtension = function(){
 				connection.buffer = [];
 
 				// If we got here, we got a complete message!
+				if(uuid) connection.quirkbot.uuid = uuid;
 				connection.quirkbot.nodes = nodesContent;
-				connection.quirkbot.updated = Date.now();
+				connection.quirkbot.updatedAt = Date.now();
 				
-				// fire event
-				dispatchStructureChangeEvent();
 				continue;	
 			}
 
@@ -117,34 +208,29 @@ var QuirkbotChromeExtension = function(){
 		}
 	}
 
-	// Connection stash --------------------------------------------------------
-	var connectionsStash = {};
-	var structure = {
-		quirkbots : []
-	};
-	var structureChangeListeners = [];
-	var addStructureChangeListener = function (listener) {
+	// Model -------------------------------------------------------------------
+	var addModelChangeListener = function (listener) {
 		var promise = function(resolve, reject){
 			var exists = false;
-			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
-				if(structureChangeListeners[i] == listener){
-					structureChangeListeners.splice(index, 1);
+			for (var i = modelChangeListeners.length - 1; i >= 0; i--) {
+				if(modelChangeListeners[i] == listener){
+					modelChangeListeners.splice(index, 1);
 					exists = true;
 					break;
 				}
 			};
 			if(!exists)
-				structureChangeListeners.push(listener);
+				modelChangeListeners.push(listener);
 
 			resolve(listener);
 		};
 		return new Promise(promise);
 	}
-	var removeStructureChangeListener = function (listener) {
+	var removeModelChangeListener = function (listener) {
 		var promise = function(resolve, reject){
-			for (var i = structureChangeListeners.length - 1; i >= 0; i--) {
-				if(structureChangeListeners[i] == listener){
-					structureChangeListeners.splice(i, 1);
+			for (var i = modelChangeListeners.length - 1; i >= 0; i--) {
+				if(modelChangeListeners[i] == listener){
+					modelChangeListeners.splice(i, 1);
 					break;
 				}
 			};
@@ -152,23 +238,29 @@ var QuirkbotChromeExtension = function(){
 		};
 		return new Promise(promise);
 	}
-	var manageQuirkbotsInStructure = function(){
+	var manageQuirkbotsInModel = function(){
+		// Figure out which connections have detected quirkbots
 		var connectionIdsWithQuirkbot = Object.keys(connectionsStash).filter(function(connectionId){
+			// Remove all mutation observers
+			Object.unobserve(connectionsStash[connectionId].quirkbot, dispatchModelChangeEvent)
+			Object.unobserve(connectionsStash[connectionId].quirkbot.upload, dispatchModelChangeEvent)
+			// Return true only for detected quirkbots
 			return connectionsStash[connectionId].detected;
 		})
-		structure.quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+		model.quirkbots = connectionIdsWithQuirkbot.map(function(connectionId){
+			// Add mutation observers to detected quirkbots
+			Object.observe(connectionsStash[connectionId].quirkbot, dispatchModelChangeEvent)
+			Object.observe(connectionsStash[connectionId].quirkbot.upload, dispatchModelChangeEvent)
 			return connectionsStash[connectionId].quirkbot;
 		})
 	}
-	var dispatchStructureChangeEvent = function(){
-		if(!structureChangeListeners.length) return;
-
-		structureChangeListeners.forEach(function(listener){	
-			listener(structure);
+	var dispatchModelChangeEvent = function(){
+		modelChangeListeners.forEach(function(listener){	
+			listener(model);
 		});
 	}
 
-	// Atomic processes -------------------------------------------------------
+	// Atomic processes --------------------------------------------------------
 	var run = function(){
 		var payload = arguments;
 		return new Promise(function(resolve){
@@ -224,14 +316,13 @@ var QuirkbotChromeExtension = function(){
 	}
 	var continuouslyMonitorQuirkbots = function(){
 		var promise = function(resolve, reject){
-			resolvePendingUploads()
-			.then(monitorQuirkbots)
+			monitorQuirkbots()
 			.then(delay(2000))
 			// recurse...
 			.then(continuouslyMonitorQuirkbots)
 			.catch(function(error){
 				console.error(
-					'Error in Quirbot monitor routine, rescheduling anyway.', 
+					'Error in Quirkbot monitor routine, rescheduling anyway.', 
 					error
 				);
 				run()
@@ -244,12 +335,6 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	// Level 1 processes -------------------------------------------------------
-	var resolvePendingUploads = function(){
-		var promise = function(resolve, reject){
-			resolve();
-		}
-		return new Promise(promise);
-	}
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			removeLostConnections()
@@ -273,17 +358,19 @@ var QuirkbotChromeExtension = function(){
 			for(var connectionId in connectionsStash){
 				
 				var connection = connectionsStash[connectionId];
+
+				// Ignore if there is an upload going on
+				if(connection.quirkbot.upload.pending) continue;
 				
-				if(Date.now() - connection.quirkbot.updated < 200) continue;
+				// Ignore if there was a recent upate
+				if(Date.now() - connection.quirkbot.updatedAt < 200) continue;
 
 				console.log('disconnected', connection);
 				delete connectionsStash[connectionId];
 				
-				// Manage quirkbots in strucure
-				manageQuirkbotsInStructure();
+				// Manage quirkbots in model
+				manageQuirkbotsInModel();
 				
-				// fire event
-				dispatchStructureChangeEvent();
 
 				var promise = new Promise(function(resolve, reject){				
 					SerialApi.disconnect(connectionId)
@@ -429,9 +516,10 @@ var QuirkbotChromeExtension = function(){
 						device: device,
 						buffer: [],
 						quirkbot : {
-							connected: Date.now(),
+							connectedAt: Date.now(),
 							uuid: '',
-							nodes : []
+							nodesContent : [],
+							upload: {}
 						}
 					})
 				}
@@ -451,27 +539,21 @@ var QuirkbotChromeExtension = function(){
 			run()
 			.then(delay(2000))
 			.then(function(){
-				if(Date.now() - connection.quirkbot.updated < 200){
+				if(Date.now() - connection.quirkbot.updatedAt < 200){
 					// Quirkbot detected!
 					connection.detected = true;
 					console.log('connected', connection)
 
 					// Manage quirkbots in strucure
-					manageQuirkbotsInStructure();
-
-					// fire event
-					dispatchStructureChangeEvent();
+					manageQuirkbotsInModel();
 
 					resolve(connection);
 				}
 				else{
-					// No quirbot here, close connection and remove from monitor
+					// No quirkbot here, close connection and remove from monitor
 					// stack.
 					delete connectionsStash[connection.connectionInfo.connectionId];
 					
-					// fire event
-					dispatchStructureChangeEvent();
-
 					SerialApi.disconnect(connection.connectionInfo.connectionId)
 					.then(function(){
 						resolve(connection);
