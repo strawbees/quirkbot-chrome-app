@@ -12,6 +12,7 @@
 		"background": {
 			"scripts": [
 				"src/chrome-arduino.js",
+				"src/Utils.js",
 				"src/ChromeExternalAPIServer.js",
 				"src/Serial.js",
 				"src/HexUploader.js",

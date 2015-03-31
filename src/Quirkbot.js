@@ -11,8 +11,6 @@ var QuirkbotChromeExtension = function(){
 	};
 	var modelChangeListeners = [];
 
-
-
 	// Process entry point -----------------------------------------------------
 	var init = function() {
 		// Register external API calls
@@ -92,13 +90,16 @@ var QuirkbotChromeExtension = function(){
 			}
 
 			hexUploader.init(connection, hexString, onStatus)
+			
+			.then(log('hexUploader.init'))
 			.then(function(){
-				console.log('success')
+				console.log('SUCESS ----------')
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
 				resolve(quirkbot);
 			})
 			.catch(function(error){
+				console.log('error ----------')
 				quirkbot.upload.pending = false;
 				quirkbot.upload.fail = true;
 				reject(error);
@@ -118,6 +119,7 @@ var QuirkbotChromeExtension = function(){
 	var NODE_CONTENT_DELIMITER = 253; 
 
 	var onSerialReceive = function(message){
+		console.log('.')
 
 		var connection = connectionsStash[message.connectionId];
 		if(!connection)	return;
@@ -197,6 +199,7 @@ var QuirkbotChromeExtension = function(){
 				connection.buffer = [];
 
 				// If we got here, we got a complete message!
+
 				if(uuid) connection.quirkbot.uuid = uuid;
 				connection.quirkbot.nodes = nodesContent;
 				connection.quirkbot.updatedAt = Date.now();
@@ -260,24 +263,6 @@ var QuirkbotChromeExtension = function(){
 		});
 	}
 
-	// Atomic processes --------------------------------------------------------
-	var run = function(){
-		var payload = arguments;
-		return new Promise(function(resolve){
-			resolve.apply(null, payload);
-		});
-	}
-	var delay = function(millis){
-		return function(){
-			var payload = arguments;
-			var promise = function(resolve, reject){
-				setTimeout(function(){
-					resolve.apply(null, payload);
-				}, millis)
-			}
-			return new Promise(promise);
-		}
-	}
 	// Level 0 processes -------------------------------------------------------
 	var closeAllSerialConnections = function(){
 		var promise = function(resolve, reject){
@@ -315,9 +300,10 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	var continuouslyMonitorQuirkbots = function(){
+		var hold = 5000;
 		var promise = function(resolve, reject){
 			monitorQuirkbots()
-			.then(delay(2000))
+			.then(delay(hold))
 			// recurse...
 			.then(continuouslyMonitorQuirkbots)
 			.catch(function(error){
@@ -326,7 +312,7 @@ var QuirkbotChromeExtension = function(){
 					error
 				);
 				run()
-				.then(delay(2000))
+				.then(delay(hold))
 				.then(continuouslyMonitorQuirkbots)
 			});
 			resolve();
@@ -337,14 +323,22 @@ var QuirkbotChromeExtension = function(){
 	// Level 1 processes -------------------------------------------------------
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
-			removeLostConnections()
+			run()
+			//.then(log('MONITOR QUIRKBOTS ------------------------------------'))
+			.then(removeLostConnections)
+			//.then(log('MQ: removeLostConnections'))
 			.then(SerialApi.getDevices)	
+			//.then(log('MQ: getDevices'))
 			.then(filterDevicesByUnusualPorts)
-			.then(sortDevicesByCommonArduinoPorts)
+			//.then(log('MQ: filterDevicesByUnusualPorts'))
 			.then(filterDevicesAlreadyInStash)
+			//.then(log('MQ: filterDevicesAlreadyInStash'))
 			.then(stablishConnections)
+			//.then(log('MQ: stablishConnections'))
 			.then(filterUnsuccessfullConnections)
+			//.then(log('MQ: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
+			//.then(log('MQ: monitorConnections'))
 			.then(resolve)
 			.catch(reject);
 		}
@@ -365,7 +359,9 @@ var QuirkbotChromeExtension = function(){
 				// Ignore if there was a recent upate
 				if(Date.now() - connection.quirkbot.updatedAt < 200) continue;
 
-				console.log('disconnected', connection);
+				console.log('%cLOST CONNECTION', 'color: red');
+				console.log(connection);
+				console.log('%c----------', 'color: red');
 				delete connectionsStash[connectionId];
 				
 				// Manage quirkbots in model
@@ -387,7 +383,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var filterDevicesByUnusualPorts = function(devices){
 		var filters = [
-			'Bluetooth'
+			'Bluetooth', 'tty'
 		]
 		var promise = function(resolve, reject){
 			devices = devices.filter(function(device){
@@ -459,7 +455,12 @@ var QuirkbotChromeExtension = function(){
 
 			var promises = [];
 			devices.forEach(function(device){
-				var promise = stablishSingleConnection(device)
+				var promise = new Promise(function(resolve, reject){
+					stablishSingleConnection(device)
+					//.then(log('MQ: stablishConnections: stablishSingleConnection'))
+					.then(resolve)
+					.catch(reject)
+				})
 				promises.push(promise)				
 			})
 			Promise.all(promises)
@@ -487,9 +488,15 @@ var QuirkbotChromeExtension = function(){
 
 			var promises = [];
 			connections.forEach(function(connection){
-				var promise = monitorSingleConnection(connection)
+				var promise = new Promise(function(resolve, reject){
+					monitorSingleConnection(connection)
+					//.then(log('MQ: monitorConnections: monitorSingleConnection'))
+					.then(resolve)
+					.catch(reject)
+				})
 				promises.push(promise)				
 			})
+
 
 			Promise.all(promises)
 			.then(resolve)
@@ -542,7 +549,9 @@ var QuirkbotChromeExtension = function(){
 				if(Date.now() - connection.quirkbot.updatedAt < 200){
 					// Quirkbot detected!
 					connection.detected = true;
-					console.log('connected', connection)
+					console.log('%cCONNECTION', 'color: green');
+					console.log(connection);
+					console.log('%c----------', 'color: green');
 
 					// Manage quirkbots in strucure
 					manageQuirkbotsInModel();
