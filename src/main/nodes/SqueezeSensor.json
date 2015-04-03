@@ -1,0 +1,11 @@
+{
+	"groups": ["Sensors"],
+	"name": "Squeeze Sensor",
+	"type": "SqueezeSensor",
+	"inputs" : {
+		"place" : -1,
+		"min" : 0,
+		"max" : 1
+	},
+	"out": true
+}

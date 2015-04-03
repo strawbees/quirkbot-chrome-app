@@ -1,0 +1,9 @@
+{
+	"groups": ["Sensors"],
+	"name": "Sonar",
+	"type": "Sonar",
+	"inputs" : {
+		"place" : -1
+	},
+	"out": true
+}

@@ -1,0 +1,10 @@
+{
+	"groups": ["Movement"],
+	"name": "Servo",
+	"type": "ServoMotor",
+	"icon" : "",
+	"inputs" : {
+		"in" : 0,
+		"place" : -1 
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"groups": ["Logic"],
+	"name": "Gate",
+	"type": "Gate",
+	"out" : true,
+	"inputs" : {
+		"in" : 0,
+		"trigger" : 0
+	}
+}

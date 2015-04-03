@@ -1,0 +1,29 @@
+{
+	"KeyPress" : "nodes/KeyPress.json",
+	"KeySequence" : "nodes/KeySequence.json",
+
+	"Wave" : "nodes/Wave.json",
+	"Randomizer" : "nodes/Randomizer.json",
+
+	"AnalogSensor" : "nodes/AnalogSensor.json",
+	"SqueezeSensor" : "nodes/SqueezeSensor.json",
+	"MakeyTouchSensor" : "nodes/MakeyTouchSensor.json",
+	"Sonar" : "nodes/Sonar.json",
+
+	"Led" : "nodes/Led.json",
+	"DualColorLed" : "nodes/DualColorLed.json",
+
+	"ServoMotor" : "nodes/ServoMotor.json",
+	"ContinuousServoMotor" : "nodes/ContinuousServoMotor.json",
+
+	"Buzzer" : "nodes/Buzzer.json",
+	
+	"VoltageOutput" : "nodes/VoltageOutput.json",	
+	
+	"Converter" : "nodes/Converter.json",
+	"List" : "nodes/List.json",
+	"Sequence" : "nodes/Sequence.json",	
+	"Gate" : "nodes/Gate.json",
+
+	"SerialMonitor" : "nodes/SerialMonitor.json"	
+}
