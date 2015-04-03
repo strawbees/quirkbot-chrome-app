@@ -14,6 +14,7 @@ SerialApi.getDevices = function(){
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'getDevices',
 				message: e.toString()
 			});
@@ -37,6 +38,7 @@ SerialApi.connect = function (path, options) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'connect',
 				message: e.toString()
 			});
@@ -59,6 +61,7 @@ SerialApi.update = function (connectionId, options) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'update',
 				message: e.toString()
 			});
@@ -80,6 +83,7 @@ SerialApi.disconnect = function (connectionId) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'disconnect',
 				message: e.toString()
 			});
@@ -102,6 +106,7 @@ SerialApi.setPaused = function (connectionId, paused) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'setPaused',
 				message: e.toString()
 			});
@@ -123,6 +128,7 @@ SerialApi.getInfo = function (connectionId) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'getInfo',
 				message: e.toString()
 			});
@@ -143,6 +149,7 @@ SerialApi.getConnections = function () {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'getConnections',
 				message: e.toString()
 			});
@@ -165,6 +172,7 @@ SerialApi.send = function (connectionId, data) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'send',
 				message: e.toString()
 			});
@@ -186,6 +194,7 @@ SerialApi.flush = function (connectionId) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'flush',
 				message: e.toString()
 			});
@@ -207,6 +216,7 @@ SerialApi.getControlSignals = function (connectionId) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'getControlSignals',
 				message: e.toString()
 			});
@@ -228,6 +238,7 @@ SerialApi.setControlSignals = function (connectionId) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'setControlSignals',
 				message: e.toString()
 			});
@@ -253,6 +264,7 @@ SerialApi.addReceiveListener = function (listener) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'addReceiveListener',
 				message: e.toString()
 			});
@@ -276,6 +288,7 @@ SerialApi.removeReceiveListener = function (listener) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'removeReceiveListener',
 				message: e.toString()
 			});
@@ -292,6 +305,7 @@ SerialApi.addReceiveErrorListener = function (listener) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'setControlSignals',
 				message: e.toString()
 			});
@@ -307,6 +321,7 @@ SerialApi.removeReceiveErrorListener = function (listener) {
 		}
 		catch(e){
 			reject({
+				file: 'Serial',
 				step: 'setControlSignals',
 				message: e.toString()
 			});
@@ -319,7 +334,8 @@ SerialApi.checkRuntimeError = function(resolve, reject, rejectStep){
 	return function(){
 		if(chrome.runtime.lastError){
 			reject({
-				step: rejectStep,
+				file: 'Serial',
+				step: 'checkRuntimeError -> ' + rejectStep,
 				message: chrome.runtime.lastError.message
 			});
 		}

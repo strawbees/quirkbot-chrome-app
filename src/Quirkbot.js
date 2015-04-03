@@ -57,13 +57,27 @@ var QuirkbotChromeExtension = function(){
 
 			if(!quirkbot){
 				// Invalid UUID
-				reject('Invalid UUID');
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'upload',
+					message: 'Invalid UUID',
+					payload: ''
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
 				return;
 			}
 
 			if(!hexString){
 				// Invalid UUID
-				reject('No Hex String');
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'upload',
+					message: 'No Hex String',
+					payload: ''
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
 				return;
 			}
 
@@ -71,7 +85,14 @@ var QuirkbotChromeExtension = function(){
 
 			if(quirkbot.upload.pending){
 				// There is already an upload going on...
-				reject('Already uploading');
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'upload',
+					message: 'Already uploading',
+					payload: ''
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
 				return;
 			}
 
@@ -90,19 +111,24 @@ var QuirkbotChromeExtension = function(){
 			}
 
 			hexUploader.init(connection, hexString, onStatus)
-			
-			.then(log('hexUploader.init'))
 			.then(function(){
 				console.log('SUCESS ----------')
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
 				resolve(quirkbot);
 			})
-			.catch(function(error){
-				console.log('error ----------')
+			.catch(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.fail = true;
-				reject(error);
+			
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'upload',
+					message: 'HexUploader failed.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
 			})
 
 

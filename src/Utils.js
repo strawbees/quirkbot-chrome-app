@@ -5,21 +5,24 @@ var run = function(){
 	});
 }
 var ENABLE_LOG = true;
-var log = function(label){
-	var payload = arguments;
-	return function(){
+var log = function(label, ignorePayload){
+	var fn =  function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
-			console.log('%c'+label, 'font-weight: bold')
 			if(ENABLE_LOG){
-				for (var i = 0; i < payload.length; i++) {
-					console.log(JSON.stringify(payload[i],  null, "\t"))
-				};
+				console.log('%c'+label, 'font-weight: bold')
+				if(!ignorePayload){
+					for (var i = 0; i < payload.length; i++) {
+						console.log(JSON.stringify(payload[i],  null, "\t"))
+					};
+				}
 			}
 			resolve.apply(null, payload);
 		}
 		return new Promise(promise);
 	}
+
+	return fn;
 }
 var delay = function(millis){
 	return function(){
