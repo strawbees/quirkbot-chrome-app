@@ -3,6 +3,13 @@
 
 var QuirkbotChromeExtension = function(){
 	var self = this;
+
+	var QB_UUID_SIZE = 16;
+	var REPORT_START_DELIMITER = 250; 
+	var END_DELIMITER = 255; 
+	var UUID_DELIMITER = 251; 
+	var NUMBER_OF_NODES_DELIMITER = 252; 
+	var NODE_CONTENT_DELIMITER = 253; 
 	
 	var connectionsStash = {};
 	var model = {
@@ -137,12 +144,7 @@ var QuirkbotChromeExtension = function(){
 	}
 
 	// Serial monitoring -------------------------------------------------------
-	var QB_UUID_SIZE = 16;
-	var REPORT_START_DELIMITER = 250; 
-	var END_DELIMITER = 255; 
-	var UUID_DELIMITER = 251; 
-	var NUMBER_OF_NODES_DELIMITER = 252; 
-	var NODE_CONTENT_DELIMITER = 253; 
+
 
 	var onSerialReceive = function(message){
 		//console.log('.')
