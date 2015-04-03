@@ -1,0 +1,13 @@
+{
+	"groups": ["Logic"],
+	"name": "Converter",
+	"type": "Converter",
+	"inputs" : {
+		"in" : 0,
+		"inMin" : 0,
+		"inMax" : 1,
+		"outMin" : 0,
+		"outMax" : 1
+	},
+	"out": true
+}

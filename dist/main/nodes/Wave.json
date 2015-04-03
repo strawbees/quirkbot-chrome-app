@@ -1,0 +1,11 @@
+{
+	"groups": ["Signal"],
+	"name": "Wave",
+	"type": "Wave",
+	"inputs" : {
+		"duration" : 1,
+		"type" : 0,
+		"offset" : 0
+	},
+	"out" : true
+}
