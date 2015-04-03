@@ -50,6 +50,10 @@ var HexUploader = function(){
 			run(connection)
 			.then(log('Started upload process', true))
 			.then(tryToUpload)
+			.then(log('Upload Completed!', true))
+			.then(log('Reconnecting...', true))
+			.then(delay(2000))
+			.then(openComunicationConnection)
 			.then(function(){
 				delete connection.hexData;
 				resolve.apply(null, arguments)
@@ -185,6 +189,7 @@ var HexUploader = function(){
 					var buffer = new Uint8Array(message.data);
 
 					if(compareArrays(buffer, response)){
+						chrome.serial.onReceive.removeListener(onReceive);
 						clearTimeout(timer);
 						resolve(connection)
 					}
@@ -347,7 +352,7 @@ var HexUploader = function(){
 			run(connection)
 			.then(log('Reseting...', true))
 			.then(reset)
-			.then(log('Reconnecting...', true))
+			.then(log('Opening connection for upload...', true))
 			.then(openUploadConnection)
 			.then(log('Entering program mode...', true))
 			.then(enterProgramMode)
@@ -359,9 +364,6 @@ var HexUploader = function(){
 			.then(leaveProgramMode)
 			.then(log('Exiting bootloader...', true))
 			.then(exitBootlader)
-			.then(disconnect)
-			.then(connectWithParams({bitrate: 115200}))
-			.then(delay(100))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -416,6 +418,30 @@ var HexUploader = function(){
 				var rejectMessage = {
 					file: 'HexUploader',
 					step: 'openUploadConnection',
+					message: 'Could not open connection.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
+	var openComunicationConnection = function(connection){
+		var promise = function(resolve, reject){
+			run(connection)
+			.then(log('Connecting with 115200 baudrate', true))
+			.then(connectWithParams({
+				bitrate: 115200,
+				persistent: true,
+				name: connection.device.path
+			}))
+			.then(delay(500))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'openComunicationConnection',
 					message: 'Could not open connection.',
 					payload: arguments
 				}
