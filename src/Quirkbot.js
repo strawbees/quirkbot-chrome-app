@@ -119,7 +119,7 @@ var QuirkbotChromeExtension = function(){
 	var NODE_CONTENT_DELIMITER = 253; 
 
 	var onSerialReceive = function(message){
-		console.log('.')
+		//console.log('.')
 
 		var connection = connectionsStash[message.connectionId];
 		if(!connection)	return;
@@ -300,7 +300,7 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	var continuouslyMonitorQuirkbots = function(){
-		var hold = 5000;
+		var hold = 1000;
 		var promise = function(resolve, reject){
 			monitorQuirkbots()
 			.then(delay(hold))
@@ -544,7 +544,7 @@ var QuirkbotChromeExtension = function(){
 			connectionsStash[connection.connectionInfo.connectionId] = connection;
 
 			run()
-			.then(delay(2000))
+			.then(delay(1000))
 			.then(function(){
 				if(Date.now() - connection.quirkbot.updatedAt < 200){
 					// Quirkbot detected!
