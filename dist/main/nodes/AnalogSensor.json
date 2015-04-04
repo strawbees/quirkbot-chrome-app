@@ -1,9 +1,0 @@
-{
-	"groups": ["Sensors"],
-	"name": "Analog Sensor",
-	"type": "AnalogSensor",
-	"inputs" : {
-		"place" : -1
-	},
-	"out": true
-}

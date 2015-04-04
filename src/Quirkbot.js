@@ -113,11 +113,7 @@ var QuirkbotChromeExtension = function(){
 		
 			var hexUploader = new HexUploader();
 			
-			var onStatus = function(status){
-
-			}
-
-			hexUploader.init(connection, hexString, onStatus)
+			hexUploader.uploadHex(connection, hexString)
 			.then(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
@@ -365,12 +361,14 @@ var QuirkbotChromeExtension = function(){
 			.then(filterDevicesByUnusualPorts)
 			//.then(log('MQ: filterDevicesByUnusualPorts'))
 			.then(filterDevicesAlreadyInStash)
+			.then(filterDevicesInRecoveryMode)
 			//.then(log('MQ: filterDevicesAlreadyInStash'))
 			.then(stablishConnections)
 			//.then(log('MQ: stablishConnections'))
 			.then(filterUnsuccessfullConnections)
 			//.then(log('MQ: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
+			.then(log('recover'))
 			//.then(log('MQ: monitorConnections'))
 			.then(resolve)
 			.catch(reject);
@@ -481,7 +479,24 @@ var QuirkbotChromeExtension = function(){
 			})
 			resolve(devices)
 		}
+		return new Promise(promise);
+	}
+	var filterDevicesInRecoveryMode = function(devices){
+		var promise = function(resolve, reject){
+			devices = devices.filter(function(device){
+				for (var i = 0; i < connectionsStash.length; i++) {
+					var connection = connectionsStash[i];
+					
+					if(connection.device.path == device.path){
+						if(connection.recoveryMode)
+							return false;
+					}
+				}
 
+				return true;
+			})
+			resolve(devices)
+		}
 		return new Promise(promise);
 	}
 	var stablishConnections = function(devices){
@@ -525,6 +540,31 @@ var QuirkbotChromeExtension = function(){
 				var promise = new Promise(function(resolve, reject){
 					monitorSingleConnection(connection)
 					//.then(log('MQ: monitorConnections: monitorSingleConnection'))
+					.then(resolve)
+					.catch(reject)
+				})
+				promises.push(promise)				
+			})
+
+
+			Promise.all(promises)
+			.then(resolve)
+			.catch(reject)
+		};
+
+		return new Promise(promise);
+	}
+	var recoverQuirkbots = function(connections){
+		var promise = function(resolve, reject){
+
+			var promises = [];
+			connections.forEach(function(connection){
+				var promise = new Promise(function(resolve, reject){
+					if(connection.detected) {
+						resolve(connection)
+						return;
+					}
+					recoverSingleQuirkbot(connection)
 					.then(resolve)
 					.catch(reject)
 				})
@@ -612,6 +652,25 @@ var QuirkbotChromeExtension = function(){
 					})
 				}
 				
+			});	
+		};
+		return new Promise(promise);
+	}
+	var recoverSingleQuirkbot = function(connection){
+		var promise = function(resolve, reject){
+			connection.recoveryMode = true;
+			// Do not wait for recovery to complete, resolve immeiately
+			resolve(connection);
+
+			var hexUploader = new HexUploader();
+
+			run(connection)
+			.then(hexUploader.recover)
+			.then(function(){
+				connection.recoveryMode = false;
+			})
+			.catch(function(){
+				connection.recoveryMode = false;
 			});	
 		};
 		return new Promise(promise);

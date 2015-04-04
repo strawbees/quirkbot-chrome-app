@@ -1,7 +1,0 @@
-{
-	"groups": ["Debug"],
-	"name": "Serial Monitor",
-	"type": "SerialMonitor",
-	"icon" : "",
-	"collection" : true
-}

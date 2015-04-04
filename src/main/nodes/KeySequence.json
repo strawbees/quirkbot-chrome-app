@@ -1,9 +1,0 @@
-{
-	"groups": ["Keyboard & Mouse"],
-	"name": "Key Sequence",
-	"type": "KeySequence",
-	"inputs" : {
-		"in" : "KEY_SPACE",
-		"hold" : 0.3
-	}
-}

@@ -1,9 +1,0 @@
-{
-	"groups": ["Light"],
-	"name": "Led",
-	"type": "Led",
-	"inputs" : {
-		"in" : 0,
-		"place" : -1
-	}
-}

@@ -13,6 +13,7 @@ var HexUploader = function(){
 	var avrProtocol = {
 		PAGE_SIZE: 128,
 		PROGRAM_ADDRESS: 0,
+		SOFTWARE_IDENTIFIER: 0x53,
 		SOFTWARE_VERSION: 0x56,
 		ENTER_PROGRAM_MODE: 0x50, // P
 		LEAVE_PROGRAM_MODE: 0x4c,
@@ -26,7 +27,7 @@ var HexUploader = function(){
 		UPLOAD_BITRATE: 57600
 	}
 	
-	var init = function(connection, hexString, statusCb){		
+	var uploadHex = function(connection, hexString){
 		var promise = function(resolve, reject){
 
 
@@ -62,7 +63,7 @@ var HexUploader = function(){
 				delete connection.hexData;
 				var rejectMessage = {
 					file: 'HexUploader',
-					step: 'init',
+					step: 'uploadHex',
 					message: 'Upload failed',
 					payload: arguments
 				}
@@ -73,8 +74,6 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-
-
 
 	// -------------------------------------------------------------------------
 	var connectWithParams = function(options){
@@ -200,7 +199,7 @@ var HexUploader = function(){
 							file: 'HexUploader',
 							step: 'waitForResponse',
 							message: 'Response did not match.',
-							payload: buffer
+							payload: [buffer, response]
 						}
 						console.error(rejectMessage)
 						reject(rejectMessage);
@@ -262,6 +261,7 @@ var HexUploader = function(){
 					if(!exists){
 						clearInterval(check);
 						resolve(connection)
+						return;
 					}
 					if(count == 10){
 						clearInterval(check);
@@ -297,6 +297,7 @@ var HexUploader = function(){
 					if(exists){
 						clearInterval(check);
 						resolve(connection)
+						return;
 					}
 					if(count == 10){
 						clearInterval(check);
@@ -354,6 +355,8 @@ var HexUploader = function(){
 			.then(reset)
 			.then(log('Opening connection for upload...', true))
 			.then(openUploadConnection)
+			.then(log('Checking for Caterina bootloader..', true))
+			.then(checkSoftware('CATERIN'))
 			.then(log('Entering program mode...', true))
 			.then(enterProgramMode)
 			.then(log('Setting programing address...', true))
@@ -469,6 +472,30 @@ var HexUploader = function(){
 			});
 		}
 		return new Promise(promise);
+	}
+	var checkSoftware = function(identifier){
+		return function (connection) {
+			var identifierChars = identifier.split('').map(function(s){
+				return s.charCodeAt(0);
+			})
+			var promise = function(resolve, reject){
+				run(connection)
+				.then(writeAndGetResponse([avrProtocol.SOFTWARE_IDENTIFIER], identifierChars))
+				.then(log('Software match!', true))
+				.then(resolve)
+				.catch(function(){
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'checkSoftware',
+						message: 'Could check software.',
+						payload: arguments
+					}
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				});
+			}
+			return new Promise(promise);
+		}		
 	}
 	var leaveProgramMode = function(connection){
 		var promise = function(resolve, reject){
@@ -706,8 +733,8 @@ var HexUploader = function(){
 	}
 	// -------------------------------------------------------------------------
 
-	Object.defineProperty(self, 'init', {
-		value: init
+	Object.defineProperty(self, 'uploadHex', {
+		value: uploadHex
 	});
 }
 

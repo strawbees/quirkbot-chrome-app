@@ -1,9 +1,0 @@
-{
-	"groups": ["Keyboard & Mouse"],
-	"name": "Key Press",
-	"type": "KeyPress",
-	"inputs" : {
-		"trigger" : 0,
-		"key" : "KEY_SPACE"
-	}
-}
