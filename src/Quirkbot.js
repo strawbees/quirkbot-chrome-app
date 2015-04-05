@@ -368,7 +368,7 @@ var QuirkbotChromeExtension = function(){
 			.then(filterUnsuccessfullConnections)
 			//.then(log('MQ: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
-			.then(log('recover'))
+			.then(recoverQuirkbots)
 			//.then(log('MQ: monitorConnections'))
 			.then(resolve)
 			.catch(reject);
@@ -400,7 +400,11 @@ var QuirkbotChromeExtension = function(){
 				manageQuirkbotsInModel();
 				
 
-				var promise = new Promise(function(resolve, reject){				
+				var promise = new Promise(function(resolve, reject){	
+					if(!connection.connectionInfo){
+						resolve();
+						return;
+					}			
 					SerialApi.disconnect(connection.connectionInfo.connectionId)
 					.then(resolve)
 					.catch(resolve)
@@ -658,20 +662,26 @@ var QuirkbotChromeExtension = function(){
 	}
 	var recoverSingleQuirkbot = function(connection){
 		var promise = function(resolve, reject){
-			connection.recoveryMode = true;
-			// Do not wait for recovery to complete, resolve immeiately
-			resolve(connection);
-
 			var hexUploader = new HexUploader();
+
+			var disconnectAndResolve = function(){
+				if(!connection.connectionInfo){
+					resolve(connection)
+					return;
+				}
+				SerialApi.disconnect(connection.connectionInfo.connectionId)
+				.then(function(){
+					resolve(connection);
+				})
+				.catch(function(){
+					resolve(connection);
+				})
+			}
 
 			run(connection)
 			.then(hexUploader.recover)
-			.then(function(){
-				connection.recoveryMode = false;
-			})
-			.catch(function(){
-				connection.recoveryMode = false;
-			});	
+			.then(disconnectAndResolve)
+			.catch(disconnectAndResolve);	
 		};
 		return new Promise(promise);
 	}

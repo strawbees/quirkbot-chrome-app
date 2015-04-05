@@ -30,7 +30,6 @@ var HexUploader = function(){
 	var uploadHex = function(connection, hexString){
 		var promise = function(resolve, reject){
 
-
 			var hexData = new CHROME_ARDUINO_INTEL_HEX(hexString).parse();
 			if (hexData == "FAIL") {
 				var rejectMessage = {
@@ -65,6 +64,25 @@ var HexUploader = function(){
 					file: 'HexUploader',
 					step: 'uploadHex',
 					message: 'Upload failed',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+
+		}
+		return new Promise(promise);
+	}
+	var recover = function(connection){
+		var promise = function(resolve, reject){
+			uploadHex(connection, QUIRKBOT_RECOVERY_SKETCH)
+			.then(resolve)
+			.catch(function(){
+				delete connection.hexData;
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'recover',
+					message: 'Recovery failed',
 					payload: arguments
 				}
 				console.error(rejectMessage)
@@ -152,7 +170,9 @@ var HexUploader = function(){
 			}
 			disconnect(connection)
 			.then(resolve)
-			.catch(resolve)
+			.catch(function(){
+				resolve(connection)
+			})
 		}
 		return new Promise(promise);
 	}
@@ -319,9 +339,10 @@ var HexUploader = function(){
 	var tryToUpload = function(connection){
 		var promise = function(resolve, reject){
 			var count = 0;
+			var max = 10;
 			var recursiveTry = function(connection){
 				run(connection)
-				.then(log('Upload try:'+count + '/5', true))
+				.then(log('Upload try:'+count + '/' + max, true))
 				.then(upload)
 				.then(resolve)
 				.catch(function(){
@@ -330,7 +351,7 @@ var HexUploader = function(){
 						var rejectMessage = {
 							file: 'HexUploader',
 							step: 'tryToUpload',
-							message: 'Failed trying to upload 5 times.',
+							message: 'Failed trying to upload '+max+' times.',
 							payload: arguments
 						}
 						console.error(rejectMessage)
@@ -735,6 +756,9 @@ var HexUploader = function(){
 
 	Object.defineProperty(self, 'uploadHex', {
 		value: uploadHex
+	});
+	Object.defineProperty(self, 'recover', {
+		value: recover
 	});
 }
 
