@@ -30,7 +30,6 @@ var HexUploader = function(){
 	var uploadHex = function(connection, hexString){
 		var promise = function(resolve, reject){
 
-
 			var hexData = new CHROME_ARDUINO_INTEL_HEX(hexString).parse();
 			if (hexData == "FAIL") {
 				var rejectMessage = {
@@ -55,16 +54,37 @@ var HexUploader = function(){
 			.then(log('Reconnecting...', true))
 			.then(delay(2000))
 			.then(openComunicationConnection)
+			.then(setQuirkbotsUploadStatus('Upload completed.'))
 			.then(function(){
 				delete connection.hexData;
 				resolve.apply(null, arguments)
 			})
 			.catch(function(){
+				setQuirkbotsUploadStatus('Upload failed.')(connection);
 				delete connection.hexData;
 				var rejectMessage = {
 					file: 'HexUploader',
 					step: 'uploadHex',
 					message: 'Upload failed',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+
+		}
+		return new Promise(promise);
+	}
+	var recover = function(connection){
+		var promise = function(resolve, reject){
+			uploadHex(connection, QUIRKBOT_RECOVERY_SKETCH)
+			.then(resolve)
+			.catch(function(){
+				delete connection.hexData;
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'recover',
+					message: 'Recovery failed',
 					payload: arguments
 				}
 				console.error(rejectMessage)
@@ -152,7 +172,9 @@ var HexUploader = function(){
 			}
 			disconnect(connection)
 			.then(resolve)
-			.catch(resolve)
+			.catch(function(){
+				resolve(connection)
+			})
 		}
 		return new Promise(promise);
 	}
@@ -316,12 +338,31 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
+	var setQuirkbotsUploadProgress = function(progress) {
+		return function(connection){
+			var promise = function(resolve, reject){
+				connection.quirkbot.upload.progress = progress;
+				resolve(connection);
+			}
+			return new Promise(promise);
+		}
+	}
+	var setQuirkbotsUploadStatus = function(status) {
+		return function(connection){
+			var promise = function(resolve, reject){
+				connection.quirkbot.upload.status = status;
+				resolve(connection);
+			}
+			return new Promise(promise);
+		}
+	}
 	var tryToUpload = function(connection){
 		var promise = function(resolve, reject){
 			var count = 0;
+			var max = 10;
 			var recursiveTry = function(connection){
 				run(connection)
-				.then(log('Upload try:'+count + '/5', true))
+				.then(log('Upload try:'+count + '/' + max, true))
 				.then(upload)
 				.then(resolve)
 				.catch(function(){
@@ -330,7 +371,7 @@ var HexUploader = function(){
 						var rejectMessage = {
 							file: 'HexUploader',
 							step: 'tryToUpload',
-							message: 'Failed trying to upload 5 times.',
+							message: 'Failed trying to upload '+max+' times.',
 							payload: arguments
 						}
 						console.error(rejectMessage)
@@ -351,6 +392,8 @@ var HexUploader = function(){
 	var upload = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
+			.then(setQuirkbotsUploadStatus('Reseting...'))
+			.then(setQuirkbotsUploadProgress(0))
 			.then(log('Reseting...', true))
 			.then(reset)
 			.then(log('Opening connection for upload...', true))
@@ -361,12 +404,15 @@ var HexUploader = function(){
 			.then(enterProgramMode)
 			.then(log('Setting programing address...', true))
 			.then(setProgrammingAddress)
+			.then(setQuirkbotsUploadStatus('Uploading...'))
 			.then(log('Write pages...', true))
 			.then(writePagesRecursivelly)
+			.then(setQuirkbotsUploadStatus('Connecting...'))
 			.then(log('Leaving program mode...', true))
 			.then(leaveProgramMode)
 			.then(log('Exiting bootloader...', true))
 			.then(exitBootlader)
+			.then(setQuirkbotsUploadProgress(1))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -571,6 +617,7 @@ var HexUploader = function(){
 				run(connection)
 				.then(log('Writing page ' + (page + 1) + '/' + numPages, true))
 				.then(writePage(page))
+				.then(setQuirkbotsUploadProgress((page + 1) /  numPages))
 				.then(function() {
 					page++;
 					if(page == numPages){
@@ -735,6 +782,9 @@ var HexUploader = function(){
 
 	Object.defineProperty(self, 'uploadHex', {
 		value: uploadHex
+	});
+	Object.defineProperty(self, 'recover', {
+		value: recover
 	});
 }
 
