@@ -353,23 +353,15 @@ var QuirkbotChromeExtension = function(){
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			run()
-			//.then(log('MONITOR QUIRKBOTS ------------------------------------'))
 			.then(removeLostConnections)
-			//.then(log('MQ: removeLostConnections'))
 			.then(SerialApi.getDevices)	
-			//.then(log('MQ: getDevices'))
 			.then(filterDevicesByUnusualPorts)
-			//.then(log('MQ: filterDevicesByUnusualPorts'))
 			.then(filterDevicesAlreadyInStash)
-			.then(filterDevicesInRecoveryMode)
-			//.then(log('MQ: filterDevicesAlreadyInStash'))
+			//.then(filterDevicesInRecoveryMode)
 			.then(stablishConnections)
-			//.then(log('MQ: stablishConnections'))
 			.then(filterUnsuccessfullConnections)
-			//.then(log('MQ: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
-			.then(recoverQuirkbots)
-			//.then(log('MQ: monitorConnections'))
+			//.then(recoverQuirkbots)
 			.then(resolve)
 			.catch(reject);
 		}
