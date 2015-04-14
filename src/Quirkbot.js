@@ -13,7 +13,6 @@ var QuirkbotChromeExtension = function(){
 	
 	var connectionsStash = [];
 	var model = {
-		uploading :false,
 		quirkbots : []
 	};
 	var modelChangeListeners = [];
