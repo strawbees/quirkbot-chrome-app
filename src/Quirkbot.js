@@ -410,7 +410,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var filterDevicesByUnusualPorts = function(devices){
 		var filters = [
-			'Bluetooth', 'tty'
+			'Bluetooth'
 		]
 		var promise = function(resolve, reject){
 			devices = devices.filter(function(device){
