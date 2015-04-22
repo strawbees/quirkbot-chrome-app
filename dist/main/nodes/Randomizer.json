@@ -1,9 +1,0 @@
-{
-	"groups": ["Signal"],
-	"name": "Randomizer",
-	"type": "Randomizer",
-	"inputs" : {
-		"interval" : 0.033,
-	},
-	"out" : true
-}
