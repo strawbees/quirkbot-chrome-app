@@ -1,6 +1,6 @@
 {
 	"name": "Quirkbot",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "Allows you to program Quirkbots directly from your browser.",
 	"default_locale": "en",
 	"icons": {
@@ -15,7 +15,7 @@
 				"src/chrome-arduino.js",
 				"src/ChromeExternalAPIServer.js",
 				"src/QUIRKBOT_RECOVERY_SKETCH.js",
-				"src/Serial.js",
+				"src/serial.js",
 				"src/HexUploader.js",
 				"src/Quirkbot.js",
 				"src/main.js"				
