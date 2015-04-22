@@ -1,6 +1,6 @@
 {
 	"name": "Quirkbot",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Allows you to program Quirkbots directly from your browser.",
 	"default_locale": "en",
 	"icons": {
