@@ -16,11 +16,20 @@ var QuirkbotChromeExtension = function(){
 		quirkbots : []
 	};
 	var modelChangeListeners = [];
+	var compiler;
 
 	// Process entry point -----------------------------------------------------
 	var init = function() {
 		// Register external API calls
 		var api = new ChromeExternalAPIServer();
+		api.registerMethod(
+			'ping',
+			ping
+		);
+		api.registerMethod(
+			'compile',
+			compile
+		);
 		api.registerMethod(
 			'upload',
 			upload
@@ -30,6 +39,10 @@ var QuirkbotChromeExtension = function(){
 			addModelChangeListener,
 			removeModelChangeListener
 		);
+
+		// Init compiler
+		compiler = new Compiler();
+		//testCompilation();
 
 		// Add a listener to all incoming serial messages
 		chrome.serial.onReceive.addListener(onSerialReceive);
@@ -42,6 +55,40 @@ var QuirkbotChromeExtension = function(){
 		Object.observe(model, dispatchModelChangeEvent);
 	}
 
+	var testCompilation = function (argument) {
+		var start = Date.now();
+		compiler.compile('#include "Quirkbot.h"\n Led led; void start(){}').
+		then(function (argument) {
+			console.log(Date.now() - start, argument)
+			setTimeout(testCompilation, 5000);
+		});
+	}
+
+	// Ping --------------------------------------------------------------------
+	var ping = function(){
+		var promise = function(resolve, reject){
+			resolve('pong')
+		}
+		return new Promise(promise);
+	}
+	// Compile -----------------------------------------------------------------
+	var compile = function(source){
+		var promise = function(resolve, reject){
+			compiler.compile(source)
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'promise',
+					message: 'Compiler failed.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			})
+		}
+		return new Promise(promise);
+	}
 	// Upload ------------------------------------------------------------------
 	var upload = function(quirkbotUuid, hexString){
 		var promise = function(resolve, reject){
@@ -140,8 +187,6 @@ var QuirkbotChromeExtension = function(){
 	}
 
 	// Serial monitoring -------------------------------------------------------
-
-
 	var onSerialReceive = function(message){
 		var connection;
 		for (var i = 0; i < connectionsStash.length; i++) {
@@ -353,13 +398,20 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			run()
 			.then(removeLostConnections)
-			.then(SerialApi.getDevices)	
+			.then(log('removeLostConnections'))
+			.then(SerialApi.getDevices)
+			.then(log('SerialApi.getDevices'))
 			.then(filterDevicesByUnusualPorts)
+			.then(log('filterDevicesByUnusualPorts'))
 			.then(filterDevicesAlreadyInStash)
+			.then(log('filterDevicesAlreadyInStash'))
 			//.then(filterDevicesInRecoveryMode)
 			.then(stablishConnections)
+			.then(log('stablishConnections'))
 			.then(filterUnsuccessfullConnections)
+			.then(log('filterUnsuccessfullConnections'))
 			.then(monitorConnections)
+			.then(log('monitorConnections'))
 			//.then(recoverQuirkbots)
 			.then(resolve)
 			.catch(reject);

@@ -1,6 +1,6 @@
 {
 	"name": "Quirkbot",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "Allows you to program Quirkbots directly from your browser.",
 	"default_locale": "en",
 	"icons": {
@@ -11,26 +11,28 @@
 	"app": {
 		"background": {
 			"scripts": [
+				"src/libs/chrome-arduino.js",
+				"src/libs/ChromeExternalAPIServer.js",
+				"src/libs/v86/libv86.js",
+				"src/libs/v86/compiler.js",
 				"src/Utils.js",
-				"src/chrome-arduino.js",
-				"src/ChromeExternalAPIServer.js",
 				"src/QUIRKBOT_RECOVERY_SKETCH.js",
 				"src/serial.js",
 				"src/HexUploader.js",
 				"src/Quirkbot.js",
-				"src/main.js"				
+				"src/main.js"
 			]
 		}
 	},
 	"externally_connectable": {
 		"matches": [
 			"*://quirkbot.com/*",
-			"*://quirkbot.dev/*",			
+			"*://quirkbot.dev/*",
 			"*://quirkbot.herokuapp.com/*"
 		]
 	},
 	"permissions": [
 		"serial",
-		"usb"		
+		"usb"
 	]
 }
