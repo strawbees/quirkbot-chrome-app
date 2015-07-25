@@ -1,6 +1,6 @@
 {
-	"name": "Quirkbot",
-	"version": "0.0.8",
+	"name": "Quirkbot for Chrome",
+	"version": "0.0.1",
 	"description": "Allows you to program Quirkbots directly from your browser.",
 	"default_locale": "en",
 	"icons": {
@@ -34,5 +34,6 @@
 	"permissions": [
 		"serial",
 		"usb"
-	]
+	],
+	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2YbynWewBTXQ9nyx/W45pU5IlZMYdXPtF7kKPo5GWuF0F1tPdwLY5WApDMqjiALILzkCmz6tIWpyjiRwRBVIzsyuWd3UNHrDZxZT8asD537A8dVbs286Nq821xqFfOpAgevyFgZ9TfNEk0QlVrUiZ+Rf2LDAAusoom9hrQhlR+5g20q7s+d0Qw5eP2rsXIG7S9YX9+PYVB6qWqyVuFbVGD8LAmiXcHlZasgilRAwOQy7ATk/iCk23tyUA30nrPpsaOC0myGeWH0Lf8aN620wBk0v8TViRX4L/OXQewV7wb4Cmk9S31WejSoPCoDbHWen/3+YeX0VW+XGiH+Yyo+8BQIDAQAB"
 }
