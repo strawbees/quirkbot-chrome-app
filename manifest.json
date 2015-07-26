@@ -26,6 +26,7 @@
 			"*://quirkbot.com/*",
 			"*://quirkbot.dev/*",
 			"*://ide.quirkbot.com/*",
+			"*://ide-local.quirkbot.com/*",
 			"*://quirkbot.herokuapp.com/*"
 		]
 	},
