@@ -26,7 +26,7 @@ var HexUploader = function(){
 		RESET_BITRATE: 1200,
 		UPLOAD_BITRATE: 57600
 	}
-	
+
 	var uploadHex = function(connection, hexString){
 		var promise = function(resolve, reject){
 
@@ -66,25 +66,6 @@ var HexUploader = function(){
 					file: 'HexUploader',
 					step: 'uploadHex',
 					message: 'Upload failed',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			});
-
-		}
-		return new Promise(promise);
-	}
-	var recover = function(connection){
-		var promise = function(resolve, reject){
-			uploadHex(connection, QUIRKBOT_RECOVERY_SKETCH)
-			.then(resolve)
-			.catch(function(){
-				delete connection.hexData;
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'recover',
-					message: 'Recovery failed',
 					payload: arguments
 				}
 				console.error(rejectMessage)
@@ -228,7 +209,7 @@ var HexUploader = function(){
 					}
 				}
 				chrome.serial.onReceive.addListener(onReceive);
-				
+
 				var timer = setTimeout(function(){
 					chrome.serial.onReceive.removeListener(onReceive);
 					var rejectMessage = {
@@ -247,7 +228,7 @@ var HexUploader = function(){
 	var writeAndGetResponse = function(payload, response){
 		return function(connection){
 			var promise = function(resolve, reject){
-				
+
 				run(connection)
 				.then(send(payload))
 				.then(waitForResponse(response))
@@ -385,7 +366,7 @@ var HexUploader = function(){
 				})
 			}
 			recursiveTry(connection);
-			
+
 		}
 		return new Promise(promise);
 	}
@@ -541,7 +522,7 @@ var HexUploader = function(){
 				});
 			}
 			return new Promise(promise);
-		}		
+		}
 	}
 	var leaveProgramMode = function(connection){
 		var promise = function(resolve, reject){
@@ -637,7 +618,7 @@ var HexUploader = function(){
 				});
 			}
 			write();
-			
+
 		}
 		return new Promise(promise);
 	}
@@ -653,10 +634,10 @@ var HexUploader = function(){
 
 				run(connection)
 				.then(
-					writeAndGetResponse( 
-						[ avrProtocol.WRITE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ].concat(payload), 
+					writeAndGetResponse(
+						[ avrProtocol.WRITE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ].concat(payload),
 						[ avrProtocol.CR ]
-					) 
+					)
 				)
 				.then(resolve)
 				.catch(function(){
@@ -702,7 +683,7 @@ var HexUploader = function(){
 				});
 			}
 			verify();
-			
+
 		}
 		return new Promise(promise);
 	}
@@ -718,10 +699,10 @@ var HexUploader = function(){
 
 				run(connection)
 				.then(
-					writeAndGetResponse( 
-						[ avrProtocol.READ_PAGE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ], 
+					writeAndGetResponse(
+						[ avrProtocol.READ_PAGE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ],
 						[ avrProtocol.CR ]
-					) 
+					)
 				)
 				.then(resolve)
 				.catch(function(){
@@ -749,7 +730,7 @@ var HexUploader = function(){
 		};
 
 		return true;
-	} 
+	}
 	var binToHex = function(bin) {
 		var bufferView = new Uint8Array(bin);
 		var hexes = [];

@@ -1,7 +1,7 @@
 {
-	"name": "Quirkbot for Chrome",
-	"version": "0.0.1",
-	"description": "Allows you to program Quirkbots directly from your browser.",
+	"version": "0.0.2",
+	"name": "__MSG_appName__",
+	"description": "__MSG_appDesc__",
 	"default_locale": "en",
 	"icons": {
 		"16": "icons/icon16.png",
@@ -13,10 +13,7 @@
 			"scripts": [
 				"src/libs/chrome-arduino.js",
 				"src/libs/ChromeExternalAPIServer.js",
-				"src/libs/v86/libv86.js",
-				"src/libs/v86/compiler.js",
 				"src/Utils.js",
-				"src/QUIRKBOT_RECOVERY_SKETCH.js",
 				"src/serial.js",
 				"src/HexUploader.js",
 				"src/Quirkbot.js",
@@ -28,6 +25,7 @@
 		"matches": [
 			"*://quirkbot.com/*",
 			"*://quirkbot.dev/*",
+			"*://ide.quirkbot.com/*",
 			"*://quirkbot.herokuapp.com/*"
 		]
 	},

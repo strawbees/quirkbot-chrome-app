@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "Quirkbot for Chrome",
+    "description": "The title of the application, displayed in the web store."
+  },
+  "appDesc": {
+    "message": "Allows you to program Quirkbots directly from your browser.",
+    "description":"The description of the application, displayed in the web store."
+  }
+}

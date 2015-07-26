@@ -19,8 +19,6 @@ var QuirkbotChromeExtension = function(){
 	var connectionsStash = [];
 	// status on how many times a device was monitored
 	var devicesMonitorStatus = {};
-	// Code compiler
-	//var compiler;
 	// Listerner pool for model change events
 	var modelChangeListeners = [];
 	// Main data model, holds all information about all quirkbots
@@ -41,10 +39,6 @@ var QuirkbotChromeExtension = function(){
 			'ping',
 			ping
 		);
-		/*api.registerMethod(
-			'compile',
-			compile
-		);*/
 		api.registerMethod(
 			'upload',
 			upload
@@ -55,10 +49,6 @@ var QuirkbotChromeExtension = function(){
 			removeModelChangeListener
 		);
 
-		// Init compiler
-		//compiler = new Compiler();
-		//testCompilation();
-
 		// Add a listener to all incoming serial messages
 		chrome.serial.onReceive.addListener(onSerialReceive);
 
@@ -68,15 +58,6 @@ var QuirkbotChromeExtension = function(){
 
 		// Dipatch events everytime the model changes
 		Object.observe(model, dispatchModelChangeEvent);
-	}
-
-	var testCompilation = function (argument) {
-		var start = Date.now();
-		compiler.compile('#include "Quirkbot.h"\n Led led; void start(){}').
-		then(function (argument) {
-			console.log(Date.now() - start, argument)
-			setTimeout(testCompilation, 5000);
-		});
 	}
 
 	// Ping --------------------------------------------------------------------
@@ -94,24 +75,6 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-	// Compile -----------------------------------------------------------------
-	/*var compile = function(source){
-		var promise = function(resolve, reject){
-			compiler.compile(source)
-			.then(resolve)
-			.catch(function(){
-				var rejectMessage = {
-					file: 'Quirkbot',
-					step: 'promise',
-					message: 'Compiler failed.',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			})
-		}
-		return new Promise(promise);
-	}*/
 	// Upload ------------------------------------------------------------------
 	var upload = function(quirkbotUuid, hexString){
 		var promise = function(resolve, reject){
@@ -637,24 +600,6 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-	/*var filterDevicesInRecoveryMode = function(devices){
-		var promise = function(resolve, reject){
-			devices = devices.filter(function(device){
-				for (var i = 0; i < connectionsStash.length; i++) {
-					var connection = connectionsStash[i];
-
-					if(connection.device.path == device.path){
-						if(connection.recoveryMode)
-							return false;
-					}
-				}
-
-				return true;
-			})
-			resolve(devices)
-		}
-		return new Promise(promise);
-	}*/
 	var stablishConnections = function(devices){
 		var promise = function(resolve, reject){
 
@@ -709,32 +654,7 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var recoverQuirkbots = function(connections){
-		var promise = function(resolve, reject){
-
-			var promises = [];
-			connections.forEach(function(connection){
-				var promise = new Promise(function(resolve, reject){
-					if(connection.detected) {
-						resolve(connection)
-						return;
-					}
-					recoverSingleQuirkbot(connection)
-					.then(resolve)
-					.catch(reject)
-				})
-				promises.push(promise)
-			})
-
-
-			Promise.all(promises)
-			.then(resolve)
-			.catch(reject)
-		};
-
-		return new Promise(promise);
-	}
-	// Level 3 processes -------------------------------------------------------
+// Level 3 processes -------------------------------------------------------
 	var stablishSingleConnection = function(device){
 		var promise = function(resolve, reject){
 			SerialApi.connect(
@@ -819,31 +739,6 @@ var QuirkbotChromeExtension = function(){
 				}
 
 			});
-		};
-		return new Promise(promise);
-	}
-	var recoverSingleQuirkbot = function(connection){
-		var promise = function(resolve, reject){
-			var hexUploader = new HexUploader();
-
-			var disconnectAndResolve = function(){
-				if(!connection.connectionInfo){
-					resolve(connection)
-					return;
-				}
-				SerialApi.disconnect(connection.connectionInfo.connectionId)
-				.then(function(){
-					resolve(connection);
-				})
-				.catch(function(){
-					resolve(connection);
-				})
-			}
-
-			run(connection)
-			.then(hexUploader.recover)
-			.then(disconnectAndResolve)
-			.catch(disconnectAndResolve);
 		};
 		return new Promise(promise);
 	}
