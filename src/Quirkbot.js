@@ -176,6 +176,9 @@ var QuirkbotChromeExtension = function(){
 	var onSerialReceive = function(message){
 		var connection;
 		for (var i = 0; i < connectionsStash.length; i++) {
+			if(typeof connectionsStash[i].connectionInfo === 'undefined'){
+				continue;
+			}
 			if(connectionsStash[i].connectionInfo.connectionId == message.connectionId){
 				connection = connectionsStash[i];
 			}

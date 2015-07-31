@@ -52,7 +52,7 @@ var HexUploader = function(){
 			.then(tryToUpload)
 			.then(log('Upload Completed!', true))
 			.then(log('Reconnecting...', true))
-			.then(delay(2000))
+			.then(delay(3000))
 			.then(openComunicationConnection)
 			.then(setQuirkbotsUploadStatus('Upload completed.'))
 			.then(function(){
@@ -266,7 +266,7 @@ var HexUploader = function(){
 						resolve(connection)
 						return;
 					}
-					if(count == 10){
+					if(count == 20){
 						clearInterval(check);
 						var rejectMessage = {
 							file: 'HexUploader',
@@ -302,7 +302,7 @@ var HexUploader = function(){
 						resolve(connection)
 						return;
 					}
-					if(count == 10){
+					if(count == 20){
 						clearInterval(check);
 						var rejectMessage = {
 							file: 'HexUploader',
@@ -361,7 +361,7 @@ var HexUploader = function(){
 					else{
 						setTimeout(function(){
 							recursiveTry(connection)
-						}, 500)
+						}, 600)
 					}
 				})
 			}
@@ -417,6 +417,7 @@ var HexUploader = function(){
 			.then(delay(100))
 			.then(log('Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection', true))
 			.then(connectWithParams({bitrate: avrProtocol.RESET_BITRATE}))
+			.then(delay(100))
 			.then(disconnect)
 			.then(log('Waiting for device to disappear.', true))
 			.then(waitForDeviceToDisappear)
@@ -763,9 +764,6 @@ var HexUploader = function(){
 
 	Object.defineProperty(self, 'uploadHex', {
 		value: uploadHex
-	});
-	Object.defineProperty(self, 'recover', {
-		value: recover
 	});
 }
 
