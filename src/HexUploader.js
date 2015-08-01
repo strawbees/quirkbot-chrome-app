@@ -48,13 +48,14 @@ var HexUploader = function(){
 			connection.hexData = hexData;
 
 			run(connection)
-			.then(log('Started upload process', true))
+			.then(log('HEX-UPLOADER: Started upload process', true))
 			.then(tryToUpload)
-			.then(log('Upload Completed!', true))
-			.then(log('Reconnecting...', true))
-			.then(delay(2000))
-			.then(openComunicationConnection)
+			.then(log('HEX-UPLOADER: Upload Completed!', true))
+			.then(log('HEX-UPLOADER: Reconnecting...', true))
+			.then(tryToOpenComunicationConnection)
+			.then(delay(1500))
 			.then(setQuirkbotsUploadStatus('Upload completed.'))
+			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
 			.then(function(){
 				delete connection.hexData;
 				resolve.apply(null, arguments)
@@ -148,10 +149,14 @@ var HexUploader = function(){
 	var disconnectAnyway = function(connection){
 		var promise = function(resolve, reject){
 			if(!connection.connectionInfo){
-				resolve(connection);
+				run(connection)
+				.then(log('HEX-UPLOADER: Desconnecting: skipping...', true))
+				.then(resolve)
 				return;
 			}
-			disconnect(connection)
+			run(connection)
+			.then(log('HEX-UPLOADER: Desconnecting: using SerialApi...', true))
+			.then(disconnect)
 			.then(resolve)
 			.catch(function(){
 				resolve(connection)
@@ -266,7 +271,7 @@ var HexUploader = function(){
 						resolve(connection)
 						return;
 					}
-					if(count == 10){
+					if(count == 20){
 						clearInterval(check);
 						var rejectMessage = {
 							file: 'HexUploader',
@@ -302,7 +307,7 @@ var HexUploader = function(){
 						resolve(connection)
 						return;
 					}
-					if(count == 10){
+					if(count == 20){
 						clearInterval(check);
 						var rejectMessage = {
 							file: 'HexUploader',
@@ -343,7 +348,7 @@ var HexUploader = function(){
 			var max = 10;
 			var recursiveTry = function(connection){
 				run(connection)
-				.then(log('Upload try:'+count + '/' + max, true))
+				.then(log('HEX-UPLOADER: Upload try:'+count + '/' + max, true))
 				.then(upload)
 				.then(resolve)
 				.catch(function(){
@@ -361,7 +366,7 @@ var HexUploader = function(){
 					else{
 						setTimeout(function(){
 							recursiveTry(connection)
-						}, 500)
+						}, 600)
 					}
 				})
 			}
@@ -375,23 +380,23 @@ var HexUploader = function(){
 			run(connection)
 			.then(setQuirkbotsUploadStatus('Reseting...'))
 			.then(setQuirkbotsUploadProgress(0))
-			.then(log('Reseting...', true))
+			.then(log('HEX-UPLOADER: Reseting...', true))
 			.then(reset)
-			.then(log('Opening connection for upload...', true))
+			.then(log('HEX-UPLOADER: Opening connection for upload...', true))
 			.then(openUploadConnection)
-			.then(log('Checking for Caterina bootloader..', true))
-			.then(checkSoftware('CATERIN'))
-			.then(log('Entering program mode...', true))
+			//.then(log('HEX-UPLOADER: Checking for Caterina bootloader..', true))
+			//.then(checkSoftware('CATERIN'))
+			.then(log('HEX-UPLOADER: Entering program mode...', true))
 			.then(enterProgramMode)
-			.then(log('Setting programing address...', true))
+			.then(log('HEX-UPLOADER: Setting programing address...', true))
 			.then(setProgrammingAddress)
 			.then(setQuirkbotsUploadStatus('Uploading...'))
-			.then(log('Write pages...', true))
+			.then(log('HEX-UPLOADER: Write pages...', true))
 			.then(writePagesRecursivelly)
 			.then(setQuirkbotsUploadStatus('Connecting...'))
-			.then(log('Leaving program mode...', true))
+			.then(log('HEX-UPLOADER: Leaving program mode...', true))
 			.then(leaveProgramMode)
-			.then(log('Exiting bootloader...', true))
+			.then(log('HEX-UPLOADER: Exiting bootloader...', true))
 			.then(exitBootlader)
 			.then(setQuirkbotsUploadProgress(1))
 			.then(resolve)
@@ -412,17 +417,18 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 
 			run(connection)
-			.then(log('Making sure port is disconnected', true))
+			.then(log('HEX-UPLOADER: Making sure port is disconnected', true))
 			.then(disconnectAnyway)
 			.then(delay(100))
-			.then(log('Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection', true))
+			.then(log('HEX-UPLOADER: Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection', true))
 			.then(connectWithParams({bitrate: avrProtocol.RESET_BITRATE}))
+			.then(delay(300))
 			.then(disconnect)
-			.then(log('Waiting for device to disappear.', true))
+			.then(log('HEX-UPLOADER: Waiting for device to disappear.', true))
 			.then(waitForDeviceToDisappear)
-			.then(log('Waiting for device to appear.', true))
+			.then(log('HEX-UPLOADER: Waiting for device to appear.', true))
 			.then(waitForDeviceToAppear)
-			.then(log('Reset completed!', true))
+			.then(log('HEX-UPLOADER: Reset completed!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -440,7 +446,7 @@ var HexUploader = function(){
 	var openUploadConnection = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
-			.then(log('Connecting with '+avrProtocol.UPLOAD_BITRATE+' baudrate', true))
+			.then(log('HEX-UPLOADER: Connecting with '+avrProtocol.UPLOAD_BITRATE+' baudrate', true))
 			.then(connectWithParams({bitrate: avrProtocol.UPLOAD_BITRATE}))
 			.then(delay(500))
 			.then(resolve)
@@ -457,10 +463,45 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
+	var tryToOpenComunicationConnection = function(connection){
+		var promise = function(resolve, reject){
+			var count = 0;
+			var max = 10;
+			var recursiveTry = function(connection){
+				run(connection)
+				.then(log('HEX-UPLOADER: Opening communication connection try:'+count + '/' + max, true))
+				.then(disconnectAnyway)
+				.then(delay(2000))
+				.then(openComunicationConnection)
+				.then(resolve)
+				.catch(function(){
+					count++;
+					if(count == 10){
+						var rejectMessage = {
+							file: 'HexUploader',
+							step: 'tryToOpenComunicationConnection',
+							message: 'Failed to open connection '+max+' times.',
+							payload: arguments
+						}
+						console.error(rejectMessage)
+						reject(rejectMessage)
+					}
+					else{
+						setTimeout(function(){
+							recursiveTry(connection)
+						}, 1000)
+					}
+				})
+			}
+			recursiveTry(connection);
+
+		}
+		return new Promise(promise);
+	}
 	var openComunicationConnection = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
-			.then(log('Connecting with 115200 baudrate', true))
+			.then(log('HEX-UPLOADER: Connecting with 115200 baudrate', true))
 			.then(connectWithParams({
 				bitrate: 115200,
 				persistent: true,
@@ -485,7 +526,7 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			run(connection)
 			.then(writeAndGetResponse([avrProtocol.ENTER_PROGRAM_MODE], [avrProtocol.CR]))
-			.then(log('Entered program mode!', true))
+			.then(log('HEX-UPLOADER: Entered program mode!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -508,7 +549,7 @@ var HexUploader = function(){
 			var promise = function(resolve, reject){
 				run(connection)
 				.then(writeAndGetResponse([avrProtocol.SOFTWARE_IDENTIFIER], identifierChars))
-				.then(log('Software match!', true))
+				.then(log('HEX-UPLOADER: Software match!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
@@ -528,7 +569,7 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			run(connection)
 			.then(writeAndGetResponse([avrProtocol.LEAVE_PROGRAM_MODE], [avrProtocol.CR]))
-			.then(log('Left program mode!', true))
+			.then(log('HEX-UPLOADER: Left program mode!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -547,7 +588,7 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			run(connection)
 			.then(writeAndGetResponse([avrProtocol.EXIT_BOOTLOADER], [avrProtocol.CR]))
-			.then(log('Exited bootloader!', true))
+			.then(log('HEX-UPLOADER: Exited bootloader!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -574,7 +615,7 @@ var HexUploader = function(){
 				],
 				[avrProtocol.CR])
 			)
-			.then(log('Address set!', true))
+			.then(log('HEX-UPLOADER: Address set!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -596,7 +637,7 @@ var HexUploader = function(){
 			var page = 0;
 			var write = function(){
 				run(connection)
-				.then(log('Writing page ' + (page + 1) + '/' + numPages, true))
+				.then(log('HEX-UPLOADER: Writing page ' + (page + 1) + '/' + numPages, true))
 				.then(writePage(page))
 				.then(setQuirkbotsUploadProgress((page + 1) /  numPages))
 				.then(function() {
@@ -662,7 +703,7 @@ var HexUploader = function(){
 			var page = 0;
 			var verify = function(){
 				run(connection)
-				.then(log('Verifying page ' + page+1 + '/' + numPages, true))
+				.then(log('HEX-UPLOADER: Verifying page ' + page+1 + '/' + numPages, true))
 				.then(verifyPage(page))
 				.then(function() {
 					page++;
@@ -763,9 +804,6 @@ var HexUploader = function(){
 
 	Object.defineProperty(self, 'uploadHex', {
 		value: uploadHex
-	});
-	Object.defineProperty(self, 'recover', {
-		value: recover
 	});
 }
 

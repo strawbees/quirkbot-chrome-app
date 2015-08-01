@@ -176,6 +176,9 @@ var QuirkbotChromeExtension = function(){
 	var onSerialReceive = function(message){
 		var connection;
 		for (var i = 0; i < connectionsStash.length; i++) {
+			if(typeof connectionsStash[i].connectionInfo === 'undefined'){
+				continue;
+			}
 			if(connectionsStash[i].connectionInfo.connectionId == message.connectionId){
 				connection = connectionsStash[i];
 			}
@@ -401,12 +404,15 @@ var QuirkbotChromeExtension = function(){
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			run()
+			.then(log('Start monitor routine', true))
 			.then(removeLostConnections)
 			.then(log('removeLostConnections'))
 			.then(fetchDevices)
 			.then(log('fetchDevices'))
 			.then(filterDevicesByUnusualPorts)
 			.then(log('filterDevicesByUnusualPorts'))
+			.then(filterUnixTty)
+			.then(log('filterUnixTty'))
 			.then(filterDevicesWithTooManyFailedAttempts)
 			.then(log('filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
@@ -581,6 +587,33 @@ var QuirkbotChromeExtension = function(){
 			resolve(devices)
 		}
 
+		return new Promise(promise);
+	}
+	var filterUnixTty = function(devices){
+		var promise = function(resolve, reject){
+			var compoundDevices = {};
+			devices.forEach(function(device, index){
+				var parts = device.path.split('.');
+				var name = parts[parts.length - 1];
+				if(!compoundDevices[name]){
+					compoundDevices[name] =  {};
+				};
+				var compound = compoundDevices[name];
+				if(device.path.indexOf('tty.') !== -1){
+					compound.tty = device;
+				}
+				else if(device.path.indexOf('cu.') !== -1){
+					compound.cu = device;
+				}
+			});
+			Object.keys(compoundDevices).forEach(function(name) {
+				var compound = compoundDevices[name];
+				if(typeof compound.tty !== 'undefined' && typeof compound.cu !== 'undefined'){
+					devices.splice(devices.indexOf(compound.tty), 1);
+				}
+			})
+			resolve(devices)
+		}
 		return new Promise(promise);
 	}
 	var filterDevicesAlreadyInStash = function(devices){
