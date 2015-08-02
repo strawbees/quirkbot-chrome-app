@@ -1,3 +1,4 @@
+rm quirkbot.com
 zip -vr quirkbot.zip \
 _locales/ \
 icons/ \
