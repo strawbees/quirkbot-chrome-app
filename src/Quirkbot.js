@@ -41,6 +41,10 @@ var QuirkbotChromeExtension = function(){
 			ping
 		);
 		api.registerMethod(
+			'getModel',
+			getModel
+		);
+		api.registerMethod(
 			'upload',
 			upload
 		);
@@ -78,6 +82,13 @@ var QuirkbotChromeExtension = function(){
 				reject('The ping was rejected because the extension is starting up. Try again shortly.')
 			}
 			else resolve('pong')
+		}
+		return new Promise(promise);
+	}
+	// Get Model ---------------------------------------------------------------
+	var getModel = function(){
+		var promise = function(resolve, reject){
+			resolve(model);
 		}
 		return new Promise(promise);
 	}
