@@ -23,6 +23,7 @@ var QuirkbotChromeExtension = function(){
 	var modelChangeListeners = [];
 	// Main data model, holds all information about all quirkbots
 	var model = {
+		platform: {},
 		quirkbots : []
 	};
 
@@ -55,6 +56,11 @@ var QuirkbotChromeExtension = function(){
 		// Clear any existing connection and start monitoring Quirkbots
 		closeAllSerialConnections()
 		.then(continuouslyMonitorQuirkbots);
+
+		// Determine Platform
+		chrome.runtime.getPlatformInfo(function(info) {
+			model.platform = info;
+		});
 
 		// Dipatch events everytime the model changes
 		Object.observe(model, dispatchModelChangeEvent);
@@ -370,7 +376,6 @@ var QuirkbotChromeExtension = function(){
 		var hold = 2000;
 		var iddleHold = 5000;
 		var promise = function(resolve, reject){
-
 			checkIfExtensionIsActive()
 			.then(function(){
 				run()
@@ -404,25 +409,27 @@ var QuirkbotChromeExtension = function(){
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			run()
-			.then(log('Start monitor routine', true))
+			.then(log('MONITOR: Start monitor routine', true))
 			.then(removeLostConnections)
-			.then(log('removeLostConnections'))
+			.then(log('MONITOR: removeLostConnections'))
 			.then(fetchDevices)
-			.then(log('fetchDevices'))
+			.then(log('MONITOR: fetchDevices'))
 			.then(filterDevicesByUnusualPorts)
-			.then(log('filterDevicesByUnusualPorts'))
-			.then(filterUnixTty)
-			.then(log('filterUnixTty'))
+			.then(log('MONITOR: filterDevicesByUnusualPorts'))
+			.then(filterMacTty)
+			.then(log('MONITOR: filterMacTty'))
 			.then(filterDevicesWithTooManyFailedAttempts)
-			.then(log('filterDevicesWithTooManyFailedAttempts'))
+			.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
-			.then(log('filterDevicesAlreadyInStash'))
+			.then(log('MONITOR: filterDevicesAlreadyInStash'))
+			.then(flagPossibleLinuxPermissionProblem)
+			.then(log('MONITOR: flagPossibleLinuxPermissionProblem', true))
 			.then(stablishConnections)
-			.then(log('stablishConnections'))
+			.then(log('MONITOR: stablishConnections'))
 			.then(filterUnsuccessfullConnections)
-			.then(log('filterUnsuccessfullConnections'))
+			.then(log('MONITOR: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
-			.then(log('monitorConnections'))
+			.then(log('MONITOR: monitorConnections'))
 			.then(resolve)
 			.catch(reject);
 		}
@@ -460,9 +467,7 @@ var QuirkbotChromeExtension = function(){
 				// Ignore if there was a recent upate
 				if(Date.now() - connection.quirkbot.updatedAt < 200) continue;
 
-				console.log('%cLOST CONNECTION', 'color: red');
-				console.log(JSON.stringify(connection, null, '\t'));
-				console.log('%c----------', 'color: red');
+				console.log('%c'+JSON.stringify(connection, null, '\t'), 'color: red');
 
 				connectionsStash.splice(i, 1);
 
@@ -501,7 +506,7 @@ var QuirkbotChromeExtension = function(){
 						}
 					}
 
-					// if there were more than 10 failed attempts, reset the counter
+					// if there were more than 20 failed attempts, reset the counter
 					if(devicesMonitorStatus[device.path].failedAttempts > 20)
 						devicesMonitorStatus[device.path].failedAttempts = 0;
 				})
@@ -538,6 +543,32 @@ var QuirkbotChromeExtension = function(){
 			})
 
 			resolve(devices)
+		}
+
+		return new Promise(promise);
+	}
+	var flagPossibleLinuxPermissionProblem = function(devices){
+		var promise = function(resolve, reject){
+			var totalTty = 0;
+			var failedTty = 0;
+			devices.forEach(function(device){
+				if(device.path.indexOf('tty') !== -1){
+					totalTty++;
+					if(devicesMonitorStatus[device.path].failedAttempts >= 2){
+						failedTty++;
+					}
+				}
+			});
+			// Flag possible permission problem
+			if(connectionsStash.length || (totalTty && !failedTty) ){
+				delete model.platform.serialPermissionError;
+				dispatchModelChangeEvent();
+			}
+			else if(failedTty && model.platform.os == 'linux'){
+				model.platform.serialPermissionError = true;
+				dispatchModelChangeEvent();
+			}
+			resolve(devices);
 		}
 
 		return new Promise(promise);
@@ -589,7 +620,7 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var filterUnixTty = function(devices){
+	var filterMacTty = function(devices){
 		var promise = function(resolve, reject){
 			var compoundDevices = {};
 			devices.forEach(function(device, index){
@@ -672,7 +703,7 @@ var QuirkbotChromeExtension = function(){
 			connections.forEach(function(connection){
 				var promise = new Promise(function(resolve, reject){
 					monitorSingleConnection(connection)
-					//.then(log('MQ: monitorConnections: monitorSingleConnection'))
+					//.then(log('MONITOR: MQ: monitorConnections: monitorSingleConnection'))
 					.then(resolve)
 					.catch(reject)
 				})
@@ -690,6 +721,11 @@ var QuirkbotChromeExtension = function(){
 // Level 3 processes -------------------------------------------------------
 	var stablishSingleConnection = function(device){
 		var promise = function(resolve, reject){
+			var unsucessfullResolve = function () {
+				// Increment the failed attempt counter
+				devicesMonitorStatus[device.path].failedAttempts++;
+				resolve();
+			}
 			SerialApi.connect(
 				device.path,
 				{
@@ -712,16 +748,11 @@ var QuirkbotChromeExtension = function(){
 						}
 					})
 				}
-				else {
-					// Increment the failed attempt counter
-					devicesMonitorStatus[device.path].failedAttempts++;
-					resolve();
-				}
+				else unsucessfullResolve();
 			})
-			.catch(function(){
-				// Increment the failed attempt counter
-				devicesMonitorStatus[device.path].failedAttempts++;
-				resolve()
+			.catch(function(error){
+				console.log(error)
+				unsucessfullResolve();
 			})
 		};
 
@@ -737,9 +768,7 @@ var QuirkbotChromeExtension = function(){
 				if(Date.now() - connection.quirkbot.updatedAt < 200){
 					// Quirkbot detected!
 					connection.detected = true;
-					console.log('%cCONNECTION', 'color: green');
-					console.log(JSON.stringify(connection, null, '\t'));
-					console.log('%c----------', 'color: green');
+					console.log('%c'+JSON.stringify(connection, null, '\t'), 'color: green');
 
 					// Reset the failed attempt counter
 					devicesMonitorStatus[connection.device.path].failedAttempts = 0;
