@@ -161,7 +161,10 @@ var QuirkbotChromeExtension = function(){
 			.then(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
-				quirkbot.updatedAt = Date.now()
+				// Give some slack to the update time. The Quirkbot has just
+				// reconnected to the computer, and may some time for the
+				// serial to bootup.
+				quirkbot.updatedAt = Date.now() + 3000;
 				resolve(quirkbot);
 
 			})
@@ -205,23 +208,25 @@ var QuirkbotChromeExtension = function(){
 		for (var i = 0; i < buffer.length; ++i) {
 
 			// Start recording the buffer if REPORT_START_DELIMITER is found
-			if(!connection.bufferOpen && buffer[i]!= REPORT_START_DELIMITER)
+			if(!connection.bufferOpen && buffer[i] !== REPORT_START_DELIMITER)
 				continue;
 
 			connection.bufferOpen = true;
 
 
-			if(buffer[i] == REPORT_START_DELIMITER)
+			if(buffer[i] === REPORT_START_DELIMITER)
 				continue;
 			// Stop recording if END_DELIMITER delmiter is found
-			if(buffer[i] == END_DELIMITER){
+			if(buffer[i] === END_DELIMITER){
 				connection.bufferOpen = false;
 
 				// Extract UUID
 				var uuidBufer = [];
 				var uuid;
-				while(connection.buffer[0] != UUID_DELIMITER){
-					uuidBufer = uuidBufer.concat(connection.buffer.splice(0,1));
+				if(connection.buffer.indexOf(UUID_DELIMITER) !== -1){
+					while(connection.buffer[0] !== UUID_DELIMITER){
+						uuidBufer = uuidBufer.concat(connection.buffer.splice(0,1));
+					}
 				}
 				if(uuidBufer.length && uuidBufer.length != QB_UUID_SIZE){
 					// It's ok to not have any UUID (uuidBufer.length == 0)
@@ -238,8 +243,10 @@ var QuirkbotChromeExtension = function(){
 
 				// Extract number of nodes
 				var nodesNumBuffer = [];
-				while(connection.buffer[0] != NUMBER_OF_NODES_DELIMITER){
-					nodesNumBuffer = nodesNumBuffer.concat(connection.buffer.splice(0,1));
+				if(connection.buffer.indexOf(NUMBER_OF_NODES_DELIMITER) !== -1){
+					while(connection.buffer[0] !== NUMBER_OF_NODES_DELIMITER){
+						nodesNumBuffer = nodesNumBuffer.concat(connection.buffer.splice(0,1));
+					}
 				}
 				if(nodesNumBuffer.length != 1){
 					// message is invalid!
@@ -254,10 +261,12 @@ var QuirkbotChromeExtension = function(){
 				var nodes = []
 				while(connection.buffer.length){
 					var nodesBuffer = [];
-					while(connection.buffer[0] != NODE_CONTENT_DELIMITER){
-						nodesBuffer = nodesBuffer.concat(connection.buffer.splice(0,1));
+					if(connection.buffer.indexOf(NODE_CONTENT_DELIMITER) !== -1){
+						while(connection.buffer[0] !== NODE_CONTENT_DELIMITER){
+							nodesBuffer = nodesBuffer.concat(connection.buffer.splice(0,1));
+						}
 					}
-					nodes.push(nodesBuffer);
+						nodes.push(nodesBuffer);
 					connection.buffer.splice(0,1);
 				}
 
@@ -533,7 +542,7 @@ var QuirkbotChromeExtension = function(){
 				// Ignore if there is an upload going on
 				if(connection.quirkbot.upload.pending) continue;
 
-				// Ignore if there was a recent upate
+				// Ignore if there was a recent update
 				if(Date.now() - connection.quirkbot.updatedAt < 200) continue;
 
 				console.log('%c'+JSON.stringify(connection, null, '\t'), 'color: red');
