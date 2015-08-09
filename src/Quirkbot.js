@@ -4,7 +4,7 @@
 var QuirkbotChromeExtension = function(){
 	var self = this;
 
-	ENABLE_LOG = false;
+	ENABLE_LOG = true;
 
 	var QB_UUID_SIZE = 16;
 	var REPORT_START_DELIMITER = 250;
