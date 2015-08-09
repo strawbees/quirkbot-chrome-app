@@ -33,6 +33,7 @@
 		]
 	},
 	"permissions": [
+		"alarms",
 		"serial",
 		"usb",
 		{

@@ -4,6 +4,8 @@
 var QuirkbotChromeExtension = function(){
 	var self = this;
 
+	ENABLE_LOG = false;
+
 	var QB_UUID_SIZE = 16;
 	var REPORT_START_DELIMITER = 250;
 	var END_DELIMITER = 255;
@@ -26,8 +28,6 @@ var QuirkbotChromeExtension = function(){
 		platform: {},
 		quirkbots : []
 	};
-
-	ENABLE_LOG = true;
 
 	// Process entry point -----------------------------------------------------
 	var init = function() {
@@ -61,6 +61,9 @@ var QuirkbotChromeExtension = function(){
 		closeAllSerialConnections()
 		.then(continuouslyMonitorQuirkbots);
 
+		// Keep sending data to the connections
+		//continuouslySendDataToConnections();
+
 		// Determine Platform
 		chrome.runtime.getPlatformInfo(function(info) {
 			model.platform = info;
@@ -69,7 +72,6 @@ var QuirkbotChromeExtension = function(){
 		// Dipatch events everytime the model changes
 		Object.observe(model, dispatchModelChangeEvent);
 	}
-
 	// Ping --------------------------------------------------------------------
 	var ping = function(){
 		var promise = function(resolve, reject){
@@ -82,13 +84,6 @@ var QuirkbotChromeExtension = function(){
 				reject('The ping was rejected because the extension is starting up. Try again shortly.')
 			}
 			else resolve('pong')
-		}
-		return new Promise(promise);
-	}
-	// Get Model ---------------------------------------------------------------
-	var getModel = function(){
-		var promise = function(resolve, reject){
-			resolve(model);
 		}
 		return new Promise(promise);
 	}
@@ -188,7 +183,6 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-
 	// Serial monitoring -------------------------------------------------------
 	var onSerialReceive = function(message){
 		var connection;
@@ -289,8 +283,13 @@ var QuirkbotChromeExtension = function(){
 			connection.buffer.push(buffer[i]);
 		}
 	}
-
 	// Model -------------------------------------------------------------------
+	var getModel = function(){
+		var promise = function(resolve, reject){
+			resolve(model);
+		}
+		return new Promise(promise);
+	}
 	var addModelChangeListener = function (listener) {
 		var promise = function(resolve, reject){
 			var exists = false;
@@ -341,8 +340,7 @@ var QuirkbotChromeExtension = function(){
 			listener(model);
 		});
 	}
-
-	// Level 0 processes -------------------------------------------------------
+	// Close all serial connections --------------------------------------------
 	var closeAllSerialConnections = function(){
 		var promise = function(resolve, reject){
 			SerialApi.getConnections()
@@ -383,6 +381,68 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
+	// Send Data to connections ------------------------------------------------
+	var continuouslySendDataToConnections = function(){
+		var promise = function(resolve, reject){
+			checkIfExtensionIsActive()
+			.then(function(){
+
+				run()
+				.then(sendDataToConnections)
+				.then(delay(100))
+				// recurse...
+				.then(continuouslySendDataToConnections)
+				.catch(function(error){
+					console.log(
+						'Quirkbot data send routine was rejected, rescheduling now.',
+						error
+					);
+					run()
+					.then(delay(100))
+					.then(continuouslySendDataToConnections)
+				});
+				resolve();
+			})
+			.catch(function(error){
+				console.log('The extension is iddle, rescheduling now.', error );
+				run()
+				.then(delay(5000))
+				.then(continuouslySendDataToConnections)
+			})
+		}
+		return new Promise(promise);
+	}
+	var sendDataToConnections = function(){
+		var promise = function(resolve, reject){
+
+			var promises = connectionsStash.map(function(connection) {
+				return sendDataToSingleConnection(connection)
+			});
+			Promise.all(promises)
+			.then(resolve)
+			.catch(reject)
+		};
+		return new Promise(promise);
+	}
+	var sendDataToSingleConnection = function(connection){
+		var promise = function(resolve, reject){
+			if(!connection || !connection.connectionInfo || !connection.connectionInfo.connectionId){
+				return resolve(connection)
+			}
+			if(connection.quirkbot && connection.quirkbot.detected && connection.quirkbot.upload.pending){
+				return resolve(connection)
+			}
+			SerialApi.send(connection.connectionInfo.connectionId, SerialApi.stringToBinary('q'))
+			.then(function() {
+				resolve(connection);
+			})
+			.catch(function() {
+				resolve(connection);
+			})
+		};
+		return new Promise(promise);
+	}
+	// Monitor Quirkbots -------------------------------------------------------
 	var continuouslyMonitorQuirkbots = function(){
 		var hold = 2000;
 		var iddleHold = 5000;
@@ -416,7 +476,6 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	// Level 1 processes -------------------------------------------------------
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			run()
@@ -446,7 +505,6 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-	// Level 2 processes -------------------------------------------------------
 	var checkIfExtensionIsActive = function(){
 		var promise = function(resolve, reject){
 			if(Date.now() - pingTime < 3000){
@@ -696,40 +754,6 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var filterUnsuccessfullConnections = function(connections){
-		var promise = function(resolve, reject){
-			connections = connections.filter(function(connection){
-				return connection ? true : false;
-			})
-			resolve(connections);
-		};
-
-		return new Promise(promise);
-	}
-
-	var monitorConnections = function(connections){
-		var promise = function(resolve, reject){
-
-			var promises = [];
-			connections.forEach(function(connection){
-				var promise = new Promise(function(resolve, reject){
-					monitorSingleConnection(connection)
-					//.then(log('MONITOR: MQ: monitorConnections: monitorSingleConnection'))
-					.then(resolve)
-					.catch(reject)
-				})
-				promises.push(promise)
-			})
-
-
-			Promise.all(promises)
-			.then(resolve)
-			.catch(reject)
-		};
-
-		return new Promise(promise);
-	}
-// Level 3 processes -------------------------------------------------------
 	var stablishSingleConnection = function(device){
 		var promise = function(resolve, reject){
 			var unsucessfullResolve = function () {
@@ -762,9 +786,40 @@ var QuirkbotChromeExtension = function(){
 				else unsucessfullResolve();
 			})
 			.catch(function(error){
-				console.log(error)
 				unsucessfullResolve();
 			})
+		};
+
+		return new Promise(promise);
+	}
+	var filterUnsuccessfullConnections = function(connections){
+		var promise = function(resolve, reject){
+			connections = connections.filter(function(connection){
+				return connection ? true : false;
+			})
+			resolve(connections);
+		};
+
+		return new Promise(promise);
+	}
+	var monitorConnections = function(connections){
+		var promise = function(resolve, reject){
+
+			var promises = [];
+			connections.forEach(function(connection){
+				var promise = new Promise(function(resolve, reject){
+					monitorSingleConnection(connection)
+					//.then(log('MONITOR: MQ: monitorConnections: monitorSingleConnection'))
+					.then(resolve)
+					.catch(reject)
+				})
+				promises.push(promise)
+			})
+
+
+			Promise.all(promises)
+			.then(resolve)
+			.catch(reject)
 		};
 
 		return new Promise(promise);
