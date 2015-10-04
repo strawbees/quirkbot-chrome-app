@@ -27,14 +27,14 @@ var HexUploader = function(){
 		UPLOAD_BITRATE: 57600
 	}
 
-	var uploadHex = function(connection, hexString){
+	var uploadHex = function(connection, hexString, skipBootloader){
 		var promise = function(resolve, reject){
 
 			var hexData = new CHROME_ARDUINO_INTEL_HEX(hexString).parse();
 			if (hexData == "FAIL") {
 				var rejectMessage = {
 					file: 'HexUploader',
-					step: 'init',
+					step: 'uploadHex',
 					message: 'Could not parse hexString.',
 					payload: hexString
 				}
@@ -49,7 +49,9 @@ var HexUploader = function(){
 
 			run(connection)
 			.then(log('HEX-UPLOADER: Started upload process', true))
-			.then(tryToEnterBootloaderMode)
+			// If the skipBootloader is true, just run, if not, try to enter
+			// bootloader mode
+			.then(skipBootloader ? run : tryToEnterBootloaderMode)
 			.then(tryToUpload)
 			.then(log('HEX-UPLOADER: Upload Completed!', true))
 			.then(log('HEX-UPLOADER: Reconnecting...', true))
@@ -205,11 +207,21 @@ var HexUploader = function(){
 					else {
 						chrome.serial.onReceive.removeListener(onReceive);
 						clearTimeout(timer);
+
+						// for a more useful error message, we convert the
+						// buffer to string, but first it needs to be a norma
+						// array not a Uint8Array.
+						var bufferAsNormalArray = Array.prototype.slice.call(buffer);
+						bufferAsNormalArray.length === buffer.length;
+						bufferAsNormalArray.constructor === Array;
 						var rejectMessage = {
 							file: 'HexUploader',
 							step: 'waitForResponse',
 							message: 'Response did not match.',
-							payload: [buffer, response]
+							payload: {
+								char: [buffer, response],
+								string: [bufferAsNormalArray.map(String.fromCharCode), response.map(String.fromCharCode)]
+							}
 						}
 						console.error(rejectMessage)
 						reject(rejectMessage);
@@ -488,8 +500,8 @@ var HexUploader = function(){
 			run(connection)
 			.then(log('HEX-UPLOADER: Opening connection for upload...', true))
 			.then(openUploadConnection)
-			//.then(log('HEX-UPLOADER: Checking for Caterina bootloader..', true))
-			//.then(checkSoftware('CATERIN'))
+			.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
+			.then(checkSoftware('QUIRKBO'))
 			.then(log('HEX-UPLOADER: Entering program mode...', true))
 			.then(enterProgramMode)
 			.then(log('HEX-UPLOADER: Setting programing address...', true))
@@ -541,7 +553,12 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			var count = 0;
 			var max = 10;
-			connection.device.path = connection.device.originalPath;
+			// The device "originalPath" is set when we try to get into Bootloader
+			// mode, but in case we dont do that (eg: upload with the skipBootloader
+			// flag), it will be undefied, hence this check here
+			if(connection.device.originalPath){
+				connection.device.path = connection.device.originalPath;
+			}
 			var recursiveTry = function(connection){
 				run(connection)
 				.then(log('HEX-UPLOADER: Opening communication connection try:'+count + '/' + max, true))
