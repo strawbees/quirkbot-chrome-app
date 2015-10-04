@@ -3,7 +3,7 @@
 ## Updating reset firmware
 To update the reset firmware to the latest one from the cloud compiler run:
 ```
-node reset-firmware/update.js
+cd reset-firmware; node update.js
 ```
 You can modify the compiler url directly in ``reset-firmware/update.js``.
 
