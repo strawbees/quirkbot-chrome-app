@@ -11,7 +11,6 @@ var readFile = utils.readFile;
 
 var newHex;
 var oldHex;
-var test = 'cu';
 request(COMPILER_URL+'/cfirmware-reset')
 .then(function (data) {
 	data = JSON.parse(data);
@@ -28,7 +27,7 @@ request(COMPILER_URL+'/cfirmware-reset')
 	return utils.writeFile('firmware.hex', newHex)();
 })
 .then(function(){
-	return utils.writeFile('firmware.js', "var RESET_FIRMWARE='" + newHex.replace(/(?:\r\n|\r|\n)/g, '\\n')+ "''")();
+	return utils.writeFile('firmware.js', "var RESET_FIRMWARE='" + newHex.replace(/(?:\r\n|\r|\n)/g, '\\n')+ "';")();
 })
 .then(function () {
 	console.log('Firmware was updated sucessfuly!');
