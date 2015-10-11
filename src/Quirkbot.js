@@ -4,8 +4,6 @@
 var QuirkbotChromeExtension = function(){
 	var self = this;
 
-	ENABLE_LOG = true;
-
 	var QB_UUID_SIZE = 16;
 	var REPORT_START_DELIMITER = 250;
 	var END_DELIMITER = 255;
@@ -19,7 +17,7 @@ var QuirkbotChromeExtension = function(){
 	var pingTime = 0;
 	// all current quirkbot connections
 	var connectionsStash = [];
-	// status on how many times a device was monitored
+	// statuses on how many times a device was monitored or if it is doing a reset
 	var devicesMonitorStatus = {};
 	// Listerner pool for model change events
 	var modelChangeListeners = [];
@@ -60,6 +58,10 @@ var QuirkbotChromeExtension = function(){
 		// Clear any existing connection and start monitoring Quirkbots
 		closeAllSerialConnections()
 		.then(continuouslyMonitorQuirkbots);
+
+		// Start resting Quirkbots that have failed to connect several times
+		//run()
+		//.then(continuouslyResetQuirkbots);
 
 		// Keep sending data to the connections
 		//continuouslySendDataToConnections();
@@ -497,6 +499,8 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: filterDevicesByUnusualPorts'))
 			.then(filterMacTty)
 			.then(log('MONITOR: filterMacTty'))
+			.then(filterDevicesCurrentlyDoingReset)
+			.then(log('MONITOR: filterDevicesCurrentlyDoingReset'))
 			.then(filterDevicesWithTooManyFailedAttempts)
 			.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
@@ -509,6 +513,8 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
 			.then(log('MONITOR: monitorConnections'))
+			// Start reset routine
+			.then(resetQuirkbots)
 			.then(resolve)
 			.catch(reject);
 		}
@@ -580,7 +586,8 @@ var QuirkbotChromeExtension = function(){
 				devices.forEach(function(device){
 					if(!devicesMonitorStatus[device.path]){
 						devicesMonitorStatus[device.path] = {
-							failedAttempts : 0
+							failedAttempts : 0,
+							doingReset : false
 						}
 					}
 
@@ -647,6 +654,19 @@ var QuirkbotChromeExtension = function(){
 				dispatchModelChangeEvent();
 			}
 			resolve(devices);
+		}
+
+		return new Promise(promise);
+	}
+	var filterDevicesCurrentlyDoingReset = function(devices){
+		var promise = function(resolve, reject){
+			devices = devices.filter(function(device){
+				if(devicesMonitorStatus[device.path].doingReset == false){
+					return true;
+				}
+				return false;
+			})
+			resolve(devices)
 		}
 
 		return new Promise(promise);
@@ -879,8 +899,167 @@ var QuirkbotChromeExtension = function(){
 		};
 		return new Promise(promise);
 	}
+	var resetQuirkbots = function(){
+		var promise = function(resolve, reject){
+			run()
+			.then(log('RESET: Start reset routine', true))
+			.then(fetchDevices)
+			.then(log('RESET: fetchDevices'))
+			.then(filterDevicesThatDontNeedReset)
+			.then(log('RESET: filterDevicesThatDontNeedReset'))
+			.then(stablishConnections)
+			.then(log('RESET: stablishConnections'))
+			.then(filterUnsuccessfullConnections)
+			.then(log('RESET: filterUnsuccessfullConnections'))
+			.then(flagThatDevicesAreDoingReset)
+			.then(log('RESET: flagThatDevicesAreDoingReset'))
+			.then(uploadResetFirmware)
+			.then(log('RESET: uploadResetFirmware'))
+			.then(flagThatDevicesAreNotDoingReset)
+			.then(log('RESET: flagThatDevicesAreNotDoingReset'))
+			.then(closeConnections)
+			.then(log('RESET: closeConnections'))
+			.then(resolve)
+			.catch(reject);
+		}
+		return new Promise(promise);
+	}
+	var filterDevicesThatDontNeedReset = function(devices){
+		var promise = function(resolve, reject){
+			devices = devices.filter(function(device){
+				var failedAttempts = devicesMonitorStatus[device.path].failedAttempts;
+				if(failedAttempts >= 1 && failedAttempts <= 3){
+					return true;
+				}
+				return false;
+			})
+			resolve(devices)
+		}
 
-	// API ---------------------------------------------------------------------
+		return new Promise(promise);
+	}
+	var flagThatDevicesAreDoingReset = function(connections){
+		var promise = function(resolve, reject){
+			var promises = [];
+			connections.forEach(function(connection){
+				devicesMonitorStatus[connection.device.path].doingReset = true;
+			})
+			resolve(connections)
+		};
+		return new Promise(promise);
+	}
+	var flagThatDevicesAreNotDoingReset = function(connections){
+		var promise = function(resolve, reject){
+			var promises = [];
+			connections.forEach(function(connection){
+				devicesMonitorStatus[connection.device.path].doingReset = false;
+			})
+			resolve(connections)
+		};
+		return new Promise(promise);
+	}
+	var uploadResetFirmware = function(connections){
+		var promise = function(resolve, reject){
+
+			var promises = [];
+			connections.forEach(function(connection){
+				var promise = new Promise(function(resolve, reject){
+					uploadSingleResetFirmware(connection)
+					.then(resolve)
+					.catch(reject)
+				})
+				promises.push(promise)
+			})
+			Promise.all(promises)
+			.then(resolve)
+			.catch(function(e){
+				console.error(e)
+				resolve(connections)
+			})
+		};
+
+		return new Promise(promise);
+	}
+	var uploadSingleResetFirmware = function(connection){
+		var promise = function(resolve, reject){
+			var hexUploader = new HexUploader();
+			hexUploader.quickUploadHex(connection, RESET_FIRMWARE)
+			.then(function(){
+				devicesMonitorStatus[connection.device.path].failedAttempts = 0;
+				resolve(connection);
+			})
+			.catch(function(){
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'uploadSingleResetFirmware',
+					message: 'HexUploader failed.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+
+				// Even if the upload fails, we resolve....
+				//devicesMonitorStatus[connection.device.path].failedAttempts = 0;
+				resolve(connection);
+			});
+		};
+
+		return new Promise(promise);
+	}
+	var closeConnections = function(connections){
+		var promise = function(resolve, reject){
+
+			var promises = [];
+			connections.forEach(function(connection){
+				var promise = new Promise(function(resolve, reject){
+					closeSingleConnection(connection)
+					.then(resolve)
+					.catch(reject)
+				})
+				promises.push(promise)
+			})
+			Promise.all(promises)
+			.then(resolve)
+			.catch(function(e){
+				console.error(e)
+				resolve(connections)
+			})
+		};
+
+		return new Promise(promise);
+	}
+	var closeSingleConnection = function(connection){
+		var promise = function(resolve, reject){
+			SerialApi.disconnect(connection.connectionInfo.connectionId)
+			.then(function(success){
+				if(success){
+					delete connection.connectionInfo;
+					resolve(connection);
+				}
+				else {
+					var rejectMessage = {
+						file: 'Quirkbot',
+						step: 'closeSingleConnection',
+						message: 'Could not disconnect',
+						payload: ''
+					}
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				}
+			})
+			.catch(function(){
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'closeSingleConnection',
+					message: 'Could not disconnect',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
+// API ---------------------------------------------------------------------
 	Object.defineProperty(self, 'init', {
 		value: init
 	});
