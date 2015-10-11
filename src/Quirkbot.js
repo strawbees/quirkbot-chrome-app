@@ -928,7 +928,7 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			devices = devices.filter(function(device){
 				var failedAttempts = devicesMonitorStatus[device.path].failedAttempts;
-				if(failedAttempts >= 3 && failedAttempts <= 5){
+				if(failedAttempts >= 1 && failedAttempts <= 3){
 					return true;
 				}
 				return false;
