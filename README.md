@@ -10,5 +10,5 @@ You can modify the compiler url directly in ``reset-firmware/update.js``.
 ## Packing for webstore
 To generate the zip to upload to the Chrome webstore, run:
 ```
-sh pack-for-webstore.sh
+sh build-release.sh
 ```
