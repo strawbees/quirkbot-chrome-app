@@ -237,12 +237,22 @@ var HexUploader = function(){
 					}
 					else resolve(connection)
 				})
+				.catch(function () {
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'send',
+						message: 'SerialApi.send rejected.',
+						payload: arguments
+					}
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				})
 			}
 			return new Promise(promise);
 		}
 	}
-	var waitForResponse = function(response, timeout){
-		timeout = timeout || 200;
+	var waitForResponse = function(response){
+		var timeout = 500;
 		return function(connection){
 			var promise = function(resolve, reject){
 				var onReceive = function(message){
@@ -299,7 +309,6 @@ var HexUploader = function(){
 	var writeAndGetResponse = function(payload, response){
 		return function(connection){
 			var promise = function(resolve, reject){
-
 				run(connection)
 				.then(send(payload))
 				.then(waitForResponse(response))
