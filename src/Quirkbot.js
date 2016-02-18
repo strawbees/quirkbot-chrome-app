@@ -160,7 +160,6 @@ var QuirkbotChromeExtension = function(){
 			.then(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
-				//quirkbot.updatedAt = Date.now();
 				resolve(quirkbot);
 
 			})
@@ -280,7 +279,6 @@ var QuirkbotChromeExtension = function(){
 
 				if(uuid) connection.quirkbot.uuid = uuid;
 				connection.quirkbot.nodes = nodes;
-				//connection.quirkbot.updatedAt = Date.now();
 
 				continue;
 			}
@@ -499,14 +497,10 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: fetchDevices'))
 			.then(filterDevicesByUSBDescriptors)
 			.then(log('MONITOR: filterDevicesByUSBDescriptors'))
-			//.then(filterDevicesByUnusualPorts)
-			//.then(log('MONITOR: filterDevicesByUnusualPorts'))
 			.then(filterMacTty)
 			.then(log('MONITOR: filterMacTty'))
-			//.then(filterDevicesCurrentlyDoingReset)
-			//.then(log('MONITOR: filterDevicesCurrentlyDoingReset'))
-			//.then(filterDevicesWithTooManyFailedAttempts)
-			//.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
+			.then(filterDevicesWithTooManyFailedAttempts)
+			.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
 			.then(log('MONITOR: filterDevicesAlreadyInStash'))
 			.then(flagPossibleLinuxPermissionProblem)
@@ -517,8 +511,6 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: filterUnsuccessfullConnections'))
 			.then(monitorConnections)
 			.then(log('MONITOR: monitorConnections'))
-			// Start reset routine
-			//.then(resetQuirkbots)
 			.then(resolve)
 			.catch(reject);
 		}
@@ -641,26 +633,6 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-	var filterDevicesByUnusualPorts = function(devices){
-		var filters = [
-			'Bluetooth'
-		]
-		var promise = function(resolve, reject){
-			devices = devices.filter(function(device){
-
-				for (var i = 0; i < filters.length; i++) {
-					var filter = filters[i];
-					if(device.path.indexOf(filter) != -1)
-						return false;
-				};
-				return true;
-			})
-
-			resolve(devices)
-		}
-
-		return new Promise(promise);
-	}
 	var flagPossibleLinuxPermissionProblem = function(devices){
 		var promise = function(resolve, reject){
 			var totalTty = 0;
@@ -687,19 +659,6 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var filterDevicesCurrentlyDoingReset = function(devices){
-		var promise = function(resolve, reject){
-			devices = devices.filter(function(device){
-				if(devicesMonitorStatus[device.path].doingReset == false){
-					return true;
-				}
-				return false;
-			})
-			resolve(devices)
-		}
-
-		return new Promise(promise);
-	}
 	var filterDevicesWithTooManyFailedAttempts = function(devices){
 		var promise = function(resolve, reject){
 			devices = devices.filter(function(device){
@@ -711,37 +670,6 @@ var QuirkbotChromeExtension = function(){
 					devicesMonitorStatus[device.path].failedAttempts++;
 				}
 			})
-			resolve(devices)
-		}
-
-		return new Promise(promise);
-	}
-	var sortDevicesByCommonArduinoPorts = function(devices){
-		var filters = [
-			'cu.usb', 'COM3', 'COM4', 'tty'
-		]
-		var promise = function(resolve, reject){
-			devices.sort(function(a,b){
-				var aMatchIndex = 100;
-				var bMatchIndex = 100;
-				filters.forEach(function(filter, index){
-					if(aMatchIndex != 100) return;
-
-					if(a.path.indexOf(filter) != -1){
-						aMatchIndex = index;
-					}
-				})
-				filters.forEach(function(filter, index){
-					if(bMatchIndex != 100) return;
-					if(b.path.indexOf(filter) != -1){
-						bMatchIndex = index;
-					}
-				})
-
-				if(aMatchIndex == bMatchIndex) return 0;
-				return (aMatchIndex < bMatchIndex) ? -1 : 1
-			})
-
 			resolve(devices)
 		}
 
@@ -867,7 +795,6 @@ var QuirkbotChromeExtension = function(){
 			connections.forEach(function(connection){
 				var promise = new Promise(function(resolve, reject){
 					monitorSingleConnection(connection)
-					//.then(log('MONITOR: MQ: monitorConnections: monitorSingleConnection'))
 					.then(resolve)
 					.catch(reject)
 				})
@@ -884,38 +811,14 @@ var QuirkbotChromeExtension = function(){
 	}
 	var monitorSingleConnection = function(connection){
 		var promise = function(resolve, reject){
+			// Since we are not doing the serial check anymore, just assume the connection is good
 			run(connection)
 			.then(handleFoundQuirkbot)
 			.then(resolve)
 			.catch(function() {
 				resolve(connection);
 			});
-			/*
 
-			run()
-			.then(delay(1000))
-			.then(function(){
-				if(Date.now() - connection.quirkbot.updatedAt < 200){
-					// Quirkbot detected!
-					run(connection)
-					.then(handleFoundQuirkbot)
-					.then(resolve)
-					.catch(function() {
-						resolve(connection);
-					});
-				}
-				else{
-					run(connection)
-					.then(handleNotFoundQuirkbot)
-					.then(closeSingleConnection)
-					.then(resolve)
-					.catch(function() {
-						resolve(connection);
-					});
-				}
-
-			});
-			*/
 		};
 		return new Promise(promise);
 	}
@@ -936,153 +839,6 @@ var QuirkbotChromeExtension = function(){
 			// Resolve
 			resolve(connection);
 		}
-		return new Promise(promise);
-	}
-	var handleNotFoundQuirkbot = function(connection){
-		var promise = function(resolve, reject){
-			// No quirkbot here, close connection and remove from monitor
-			// stack.
-			for (var i = connectionsStash.length - 1; i >= 0; i--) {
-				if(connectionsStash[i] == connection){
-					connectionsStash.splice(i, 1);
-					break;
-				}
-			};
-
-			// Increment the failed attempt counter
-			devicesMonitorStatus[connection.device.path].failedAttempts++;
-
-			// Resolve
-			resolve(connection);
-		}
-		return new Promise(promise);
-	}
-	var resetQuirkbots = function(){
-		var promise = function(resolve, reject){
-			run()
-			.then(log('RESET: Start reset routine', true))
-			.then(fetchDevices)
-			.then(log('RESET: fetchDevices'))
-			.then(filterDevicesThatDontNeedReset)
-			.then(log('RESET: filterDevicesThatDontNeedReset'))
-			.then(stablishConnections)
-			.then(log('RESET: stablishConnections'))
-			.then(filterUnsuccessfullConnections)
-			.then(log('RESET: filterUnsuccessfullConnections'))
-			.then(flagThatDevicesAreDoingReset)
-			.then(log('RESET: flagThatDevicesAreDoingReset'))
-			.then(uploadResetFirmware)
-			.then(log('RESET: uploadResetFirmware'))
-			.then(flagThatDevicesAreNotDoingReset)
-			.then(log('RESET: flagThatDevicesAreNotDoingReset'))
-			.then(closeConnections)
-			.then(log('RESET: closeConnections'))
-			.then(resolve)
-			.catch(reject);
-		}
-		return new Promise(promise);
-	}
-	var filterDevicesThatDontNeedReset = function(devices){
-		var promise = function(resolve, reject){
-			devices = devices.filter(function(device){
-				var failedAttempts = devicesMonitorStatus[device.path].failedAttempts;
-				if(failedAttempts >= 1 && failedAttempts <= 3){
-					return true;
-				}
-				return false;
-			})
-			resolve(devices)
-		}
-
-		return new Promise(promise);
-	}
-	var flagThatDevicesAreDoingReset = function(connections){
-		var promise = function(resolve, reject){
-			var promises = [];
-			connections.forEach(function(connection){
-				devicesMonitorStatus[connection.device.path].doingReset = true;
-			})
-			resolve(connections)
-		};
-		return new Promise(promise);
-	}
-	var flagThatDevicesAreNotDoingReset = function(connections){
-		var promise = function(resolve, reject){
-			var promises = [];
-			connections.forEach(function(connection){
-				devicesMonitorStatus[connection.device.path].doingReset = false;
-			})
-			resolve(connections)
-		};
-		return new Promise(promise);
-	}
-	var uploadResetFirmware = function(connections){
-		var promise = function(resolve, reject){
-
-			var promises = [];
-			connections.forEach(function(connection){
-				var promise = new Promise(function(resolve, reject){
-					uploadSingleResetFirmware(connection)
-					.then(resolve)
-					.catch(reject)
-				})
-				promises.push(promise)
-			})
-			Promise.all(promises)
-			.then(resolve)
-			.catch(function(e){
-				console.error(e)
-				resolve(connections)
-			})
-		};
-
-		return new Promise(promise);
-	}
-	var uploadSingleResetFirmware = function(connection){
-		var promise = function(resolve, reject){
-			var hexUploader = new HexUploader();
-			hexUploader.quickUploadHex(connection, RESET_FIRMWARE)
-			.then(function(){
-				devicesMonitorStatus[connection.device.path].failedAttempts = 0;
-				resolve(connection);
-			})
-			.catch(function(){
-				var rejectMessage = {
-					file: 'Quirkbot',
-					step: 'uploadSingleResetFirmware',
-					message: 'HexUploader failed.',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-
-				// Even if the upload fails, we resolve....
-				//devicesMonitorStatus[connection.device.path].failedAttempts = 0;
-				resolve(connection);
-			});
-		};
-
-		return new Promise(promise);
-	}
-	var closeConnections = function(connections){
-		var promise = function(resolve, reject){
-
-			var promises = [];
-			connections.forEach(function(connection){
-				var promise = new Promise(function(resolve, reject){
-					closeSingleConnection(connection)
-					.then(resolve)
-					.catch(reject)
-				})
-				promises.push(promise)
-			})
-			Promise.all(promises)
-			.then(resolve)
-			.catch(function(e){
-				console.error(e)
-				resolve(connections)
-			})
-		};
-
 		return new Promise(promise);
 	}
 	var closeSingleConnection = function(connection){
@@ -1117,7 +873,7 @@ var QuirkbotChromeExtension = function(){
 		}
 		return new Promise(promise);
 	}
-// API ---------------------------------------------------------------------
+	// API ---------------------------------------------------------------------
 	Object.defineProperty(self, 'init', {
 		value: init
 	});
