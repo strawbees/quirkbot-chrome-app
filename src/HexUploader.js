@@ -48,7 +48,6 @@ var HexUploader = function(){
 			.then(removeHexDataFromConnection)
 			.then(resolve)
 			.catch(function(){
-				setQuirkbotsUploadStatus('Upload failed.')(connection);
 				delete connection.hexData;
 				var rejectMessage = {
 					file: 'HexUploader',
@@ -80,7 +79,6 @@ var HexUploader = function(){
 			.then(removeHexDataFromConnection)
 			.then(resolve)
 			.catch(function(){
-				setQuirkbotsUploadStatus('Upload failed.')(connection);
 				delete connection.hexData;
 				var rejectMessage = {
 					file: 'HexUploader',

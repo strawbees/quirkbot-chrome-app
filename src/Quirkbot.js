@@ -153,20 +153,14 @@ var QuirkbotChromeExtension = function(){
 
 
 			//------------------------------------------------------------------
-			quirkbot.upload.progress = 0;
 			quirkbot.upload.pending = true;
-
-
 			var hexUploader = new HexUploader();
 
 			hexUploader.uploadHex(connection, hexString)
 			.then(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
-				// Give some slack to the update time. The Quirkbot has just
-				// reconnected to the computer, and may some time for the
-				// serial to bootup.
-				quirkbot.updatedAt = Date.now() + 3000;
+				//quirkbot.updatedAt = Date.now();
 				resolve(quirkbot);
 
 			})
@@ -286,7 +280,7 @@ var QuirkbotChromeExtension = function(){
 
 				if(uuid) connection.quirkbot.uuid = uuid;
 				connection.quirkbot.nodes = nodes;
-				connection.quirkbot.updatedAt = Date.now();
+				//connection.quirkbot.updatedAt = Date.now();
 
 				continue;
 			}
@@ -346,9 +340,17 @@ var QuirkbotChromeExtension = function(){
 			return connection.quirkbot;
 		})
 	}
+	var _stringifiedModel;
 	var dispatchModelChangeEvent = function(){
+		// Make sure to only dispatch is there is a change in the model.
+		var stringified = JSON.stringify(model);
+		if(stringified === _stringifiedModel){
+			return;
+		}
+		_stringifiedModel = stringified;
+		var parsedModel = JSON.parse(_stringifiedModel);
 		modelChangeListeners.forEach(function(listener){
-			listener(model);
+			listener(parsedModel);
 		});
 	}
 	// Close all serial connections --------------------------------------------
@@ -495,14 +497,16 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: removeLostConnections'))
 			.then(fetchDevices)
 			.then(log('MONITOR: fetchDevices'))
-			.then(filterDevicesByUnusualPorts)
-			.then(log('MONITOR: filterDevicesByUnusualPorts'))
+			.then(filterDevicesByUSBDescriptors)
+			.then(log('MONITOR: filterDevicesByUSBDescriptors'))
+			//.then(filterDevicesByUnusualPorts)
+			//.then(log('MONITOR: filterDevicesByUnusualPorts'))
 			.then(filterMacTty)
 			.then(log('MONITOR: filterMacTty'))
-			.then(filterDevicesCurrentlyDoingReset)
-			.then(log('MONITOR: filterDevicesCurrentlyDoingReset'))
-			.then(filterDevicesWithTooManyFailedAttempts)
-			.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
+			//.then(filterDevicesCurrentlyDoingReset)
+			//.then(log('MONITOR: filterDevicesCurrentlyDoingReset'))
+			//.then(filterDevicesWithTooManyFailedAttempts)
+			//.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
 			.then(log('MONITOR: filterDevicesAlreadyInStash'))
 			.then(flagPossibleLinuxPermissionProblem)
@@ -514,7 +518,7 @@ var QuirkbotChromeExtension = function(){
 			.then(monitorConnections)
 			.then(log('MONITOR: monitorConnections'))
 			// Start reset routine
-			.then(resetQuirkbots)
+			//.then(resetQuirkbots)
 			.then(resolve)
 			.catch(reject);
 		}
@@ -539,41 +543,51 @@ var QuirkbotChromeExtension = function(){
 		return new Promise(promise);
 	}
 	var removeLostConnections = function(){
-		var promise = function(resolve, reject){
-
+		var promise = function (resolve, reject) {
 			var promises = [];
 			for (var i = connectionsStash.length - 1; i >= 0; i--) {
-				var connection = connectionsStash[i];
+				(function(index) {
+					var connection = connectionsStash[i];
+					var promise = function(resolve, reject) {
+						// If there is an upload pending, resolve early
+						if(connection.quirkbot.upload.pending){
+							resolve();
+							return;
+						}
+						SerialApi.getControlSignals(connection.connectionInfo.connectionId)
+						// If we are able to get the control signals, assume connection is healty
+						.then(resolve)
+						// If we can't get the control signals, assume the connection was lost
+						.catch(function() {
+							var rejectMessage = {
+								file: 'Quirkbot',
+								step: 'removeLostConnections',
+								message: 'Could not get control signals of one of the connections.',
+								payload: arguments
+							}
+							console.error('MONITOR:', rejectMessage)
+							// If not, remove that connection from the stash
+							console.log('%cMONITOR: Disconnected!', 'color: red', connection);
+							connectionsStash.splice(index, 1);
+							manageQuirkbotsInModel();
 
-				// Ignore if there is an upload going on
-				if(connection.quirkbot.upload.pending) continue;
-
-				// Ignore if there was a recent update
-				if(Date.now() - connection.quirkbot.updatedAt < 200) continue;
-
-				console.log('%c'+JSON.stringify(connection, null, '\t'), 'color: red');
-
-				connectionsStash.splice(i, 1);
-
-
-				// Manage quirkbots in model
-				manageQuirkbotsInModel();
-
-
-				var promise = new Promise(function(resolve, reject){
-					if(!connection.connectionInfo){
-						resolve();
-						return;
+							run(connection)
+							.then(closeSingleConnection)
+							.then(resolve)
+							.catch(resolve)
+						})
 					}
-					SerialApi.disconnect(connection.connectionInfo.connectionId)
-					.then(resolve)
-					.catch(resolve)
-				});
-
+					promises.push(new Promise(promise));
+				})(i);
 			}
 			Promise.all(promises)
-			.then(resolve)
-			.catch(resolve)
+			.then(function () {
+				resolve();
+			})
+			.catch(function () {
+				resolve();
+			})
+
 		};
 		return new Promise(promise);
 	}
@@ -610,6 +624,21 @@ var QuirkbotChromeExtension = function(){
 			})
 			.catch(reject)
 		};
+		return new Promise(promise);
+	}
+	var filterDevicesByUSBDescriptors = function(devices){
+		var promise = function(resolve, reject){
+			devices = devices.filter(function(device){
+				if(device.displayName && device.displayName.indexOf('Quirkbot') != -1){
+					return true;
+				}
+				if(device.productId && device.productId === 0xF005){
+					return true;
+				}
+				return false;
+			});
+			resolve(devices)
+		}
 		return new Promise(promise);
 	}
 	var filterDevicesByUnusualPorts = function(devices){
@@ -855,48 +884,77 @@ var QuirkbotChromeExtension = function(){
 	}
 	var monitorSingleConnection = function(connection){
 		var promise = function(resolve, reject){
-			connectionsStash.push(connection);
+			run(connection)
+			.then(handleFoundQuirkbot)
+			.then(resolve)
+			.catch(function() {
+				resolve(connection);
+			});
+			/*
 
 			run()
 			.then(delay(1000))
 			.then(function(){
 				if(Date.now() - connection.quirkbot.updatedAt < 200){
 					// Quirkbot detected!
-					connection.detected = true;
-					console.log('%c'+JSON.stringify(connection, null, '\t'), 'color: green');
-
-					// Reset the failed attempt counter
-					devicesMonitorStatus[connection.device.path].failedAttempts = 0;
-
-					// Manage quirkbots in strucure
-					manageQuirkbotsInModel();
-
-					resolve(connection);
+					run(connection)
+					.then(handleFoundQuirkbot)
+					.then(resolve)
+					.catch(function() {
+						resolve(connection);
+					});
 				}
 				else{
-					// No quirkbot here, close connection and remove from monitor
-					// stack.
-					for (var i = connectionsStash.length - 1; i >= 0; i--) {
-						if(connectionsStash[i] == connection){
-							connectionsStash.splice(i, 1);
-							break;
-						}
-					};
-
-					// Increment the failed attempt counter
-					devicesMonitorStatus[connection.device.path].failedAttempts++;
-
-					SerialApi.disconnect(connection.connectionInfo.connectionId)
-					.then(function(){
+					run(connection)
+					.then(handleNotFoundQuirkbot)
+					.then(closeSingleConnection)
+					.then(resolve)
+					.catch(function() {
 						resolve(connection);
-					})
-					.catch(function(){
-						resolve(connection);
-					})
+					});
 				}
 
 			});
+			*/
 		};
+		return new Promise(promise);
+	}
+	var handleFoundQuirkbot = function(connection){
+		var promise = function(resolve, reject){
+			connectionsStash.push(connection);
+
+			// Quirkbot detected!
+			connection.detected = true;
+			console.log('%cMONITOR: Connected!\n','color:green', connection);
+
+			// Reset the failed attempt counter
+			devicesMonitorStatus[connection.device.path].failedAttempts = 0;
+
+			// Manage quirkbots in strucure
+			manageQuirkbotsInModel();
+
+			// Resolve
+			resolve(connection);
+		}
+		return new Promise(promise);
+	}
+	var handleNotFoundQuirkbot = function(connection){
+		var promise = function(resolve, reject){
+			// No quirkbot here, close connection and remove from monitor
+			// stack.
+			for (var i = connectionsStash.length - 1; i >= 0; i--) {
+				if(connectionsStash[i] == connection){
+					connectionsStash.splice(i, 1);
+					break;
+				}
+			};
+
+			// Increment the failed attempt counter
+			devicesMonitorStatus[connection.device.path].failedAttempts++;
+
+			// Resolve
+			resolve(connection);
+		}
 		return new Promise(promise);
 	}
 	var resetQuirkbots = function(){
