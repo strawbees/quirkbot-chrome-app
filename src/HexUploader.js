@@ -14,15 +14,13 @@ var HexUploader = function(){
 		PAGE_SIZE: 128,
 		PROGRAM_ADDRESS: 0,
 		SOFTWARE_IDENTIFIER: 0x53, // S
-		//SOFTWARE_VERSION: 0x56, // V
 		ENTER_PROGRAM_MODE: 0x50, // P
 		LEAVE_PROGRAM_MODE: 0x4c, // L
 		SET_ADDRESS: 0x41, // A
-		WRITE: 0x42, // B TODO: WRITE_PAGE
+		WRITE: 0x42, // B
 		TYPE_FLASH: 0x46, // F
 		EXIT_BOOTLOADER: 0x45, // E
 		CR: 0x0D, // Carriage return
-		//READ_PAGE: 0x67, // g
 		RESET_BITRATE: 1200,
 		UPLOAD_BITRATE: 57600
 	}
@@ -37,14 +35,15 @@ var HexUploader = function(){
 			run(connection)
 			.then(log('HEX-UPLOADER: Started upload process', true))
 			.then(addHexDataToConnection(hexString))
-			.then(log('HEX-UPLOADER: Trying to enter bootloader mode...', true))
-			.then(tryToExecute(enterBootaloderMode, 10, 1000))
+			.then(log('HEX-UPLOADER: Ensure board is on Bootloader...', true))
+			.then(guaranteeBootaloderMode)
 			.then(log('HEX-UPLOADER: Trying to upload...', true))
-			.then(tryToExecute(upload, 10, 600, filterWrongSoftware))
+			.then(tryToExecute(upload, 10, 600, earlyRejectOnWrongSoftware))
+			.then(log('HEX-UPLOADER: Trying to exit the Bootloader...', true))
+			.then(tryToExecute(exitBootlader, 10, 1000))
 			.then(log('HEX-UPLOADER: Trying to open the communication connection...', true))
 			.then(tryToExecute(openCommunicationConnection, 10, 1000))
 			.then(delay(1500))
-			.then(setQuirkbotsUploadStatus('Upload completed.'))
 			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
 			.then(removeHexDataFromConnection)
 			.then(resolve)
@@ -77,9 +76,8 @@ var HexUploader = function(){
 			run(connection)
 			.then(log('HEX-UPLOADER: Started quick upload process', true))
 			.then(addHexDataToConnection(hexString))
-			.then(tryToExecute(upload, 10, 600, filterWrongSoftware))
+			.then(tryToExecute(upload, 10, 600, earlyRejectOnWrongSoftware))
 			.then(removeHexDataFromConnection)
-			.then(setQuirkbotsUploadStatus('Upload completed.'))
 			.then(resolve)
 			.catch(function(){
 				setQuirkbotsUploadStatus('Upload failed.')(connection);
@@ -336,7 +334,6 @@ var HexUploader = function(){
 					count++;
 					var exists = false;
 					for (var i = 0; i < devices.length; i++) {
-						console.log('HEX-', devices[i].path, connection.device.path)
 						if(devices[i].path == connection.device.path){
 							exists = true;
 							break;
@@ -344,6 +341,7 @@ var HexUploader = function(){
 					};
 					if(!exists){
 						clearInterval(check);
+						console.log('HEX-UPLOADER: Device disappeared:', connection.device.path)
 						resolve(connection)
 						return;
 					}
@@ -382,6 +380,7 @@ var HexUploader = function(){
 								clearInterval(check);
 								connection.device.originalPath = connection.device.path;
 								connection.device.path = devices[i].path;
+								console.log('HEX-UPLOADER: New device appeared:', connection.device.path)
 								resolve(connection)
 								return;
 							}
@@ -405,65 +404,39 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var waitForSameDeviceToAppear = function(connection){
+	var guaranteeBootaloderMode = function(connection){
 		var promise = function(resolve, reject){
-			var count = 0;
-			var check = setInterval(function(){
-				SerialApi.getDevices()
-				.then(function(devices){
-					count++;
-					var exists = false;
-					for (var i = 0; i < devices.length; i++) {
-						if(devices[i].path == connection.device.path){
-							exists = true;
-							break;
-						}
-					};
-					if(exists){
-						clearInterval(check);
-						resolve(connection)
-						return;
+			run(connection)
+			.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
+			.then(checkSoftware('QUIRKBO'))
+			.then(resolve)
+			.catch(function(){
+				run(connection)
+				.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
+				.then(tryToExecute(enterBootaloderMode, 10, 600))
+				//.then(delay(500))
+				.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
+				.then(tryToExecute(openUploadConnection, 10, 1000))
+				.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
+				.then(checkSoftware('QUIRKBO'))
+				.then(resolve)
+				.catch(function(){
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'guaranteeBootaloderMode',
+						message: 'Could not guarantee bootloader mode.',
+						payload: arguments
 					}
-					if(count == 20){
-						clearInterval(check);
-						var rejectMessage = {
-							file: 'HexUploader',
-							step: 'waitForSameDeviceToAppear',
-							message: 'Device never appeared.',
-							payload: ''
-						}
-						console.error(rejectMessage)
-						reject(rejectMessage)
-					}
-				})
-
-			}, 1)
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				});
+			});
 		}
 		return new Promise(promise);
-	}
-	var setQuirkbotsUploadProgress = function(progress) {
-		return function(connection){
-			var promise = function(resolve, reject){
-				connection.quirkbot.upload.progress = progress;
-				resolve(connection);
-			}
-			return new Promise(promise);
-		}
-	}
-	var setQuirkbotsUploadStatus = function(status) {
-		return function(connection){
-			var promise = function(resolve, reject){
-				connection.quirkbot.upload.status = status;
-				resolve(connection);
-			}
-			return new Promise(promise);
-		}
 	}
 	var enterBootaloderMode = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
-			.then(setQuirkbotsUploadStatus('Reseting...'))
-			.then(setQuirkbotsUploadProgress(0))
 			.then(log('HEX-UPLOADER: Making sure port is disconnected', true))
 			.then(disconnectAnyway)
 			.then(delay(100))
@@ -471,7 +444,7 @@ var HexUploader = function(){
 			.then(connectWithParams({bitrate: avrProtocol.RESET_BITRATE}))
 			.then(delay(300))
 			.then(disconnect)
-			.then(log('HEX-UPLOADER: Waiting for device to disappear.', true))
+			.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
 			.then(waitForSameDeviceToDisappear)
 			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
 			.then(waitForNewDeviceToAppear)
@@ -493,25 +466,9 @@ var HexUploader = function(){
 	var upload = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
-			.then(log('HEX-UPLOADER: Opening connection for upload...', true))
-			.then(disconnectAnyway)
-			.then(delay(100))
-			.then(openUploadConnection)
-			.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
-			.then(checkSoftware('QUIRKBO'))
-			.then(log('HEX-UPLOADER: Entering program mode...', true))
-			.then(enterProgramMode)
-			.then(log('HEX-UPLOADER: Setting programing address...', true))
-			.then(setProgrammingAddress)
-			.then(setQuirkbotsUploadStatus('Uploading...'))
 			.then(log('HEX-UPLOADER: Write pages...', true))
 			.then(writePagesRecursivelly)
-			.then(setQuirkbotsUploadStatus('Connecting...'))
-			.then(log('HEX-UPLOADER: Leaving program mode...', true))
-			.then(leaveProgramMode)
-			.then(log('HEX-UPLOADER: Exiting bootloader...', true))
-			.then(exitBootlader)
-			.then(setQuirkbotsUploadProgress(1))
+
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -572,25 +529,6 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var enterProgramMode = function(connection){
-		var promise = function(resolve, reject){
-			run(connection)
-			.then(writeAndGetResponse([avrProtocol.ENTER_PROGRAM_MODE], [avrProtocol.CR]))
-			.then(log('HEX-UPLOADER: Entered program mode!', true))
-			.then(resolve)
-			.catch(function(){
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'enterProgramMode',
-					message: 'Could not enter program mode.',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			});
-		}
-		return new Promise(promise);
-	}
 	var checkSoftware = function(identifier){
 		return function (connection) {
 			var identifierChars = identifier.split('').map(function(s){
@@ -615,29 +553,14 @@ var HexUploader = function(){
 			return new Promise(promise);
 		}
 	}
-	var leaveProgramMode = function(connection){
-		var promise = function(resolve, reject){
-			run(connection)
-			.then(writeAndGetResponse([avrProtocol.LEAVE_PROGRAM_MODE], [avrProtocol.CR]))
-			.then(log('HEX-UPLOADER: Left program mode!', true))
-			.then(resolve)
-			.catch(function(){
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'leaveProgramMode',
-					message: 'Could not leave program mode.',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			});
-		}
-		return new Promise(promise);
-	}
 	var exitBootlader = function(connection){
 		var promise = function(resolve, reject){
 			run(connection)
 			.then(writeAndGetResponse([avrProtocol.EXIT_BOOTLOADER], [avrProtocol.CR]))
+			.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
+			.then(waitForSameDeviceToDisappear)
+			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
+			.then(waitForNewDeviceToAppear)
 			.then(log('HEX-UPLOADER: Exited bootloader!', true))
 			.then(resolve)
 			.catch(function(){
@@ -645,33 +568,6 @@ var HexUploader = function(){
 					file: 'HexUploader',
 					step: 'exitBootlader',
 					message: 'Could not leave program mode.',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			});
-		}
-		return new Promise(promise);
-	}
-	var setProgrammingAddress = function(connection){
-		var promise = function(resolve, reject){
-			var addressBytes = storeAsTwoBytes(avrProtocol.PROGRAM_ADDRESS);
-			run(connection)
-			.then(writeAndGetResponse(
-				[
-					avrProtocol.SET_ADDRESS,
-					addressBytes[0],
-					addressBytes[1]
-				],
-				[avrProtocol.CR])
-			)
-			.then(log('HEX-UPLOADER: Address set!', true))
-			.then(resolve)
-			.catch(function(){
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'enterProgramMode',
-					message: 'Could not enter program mode.',
 					payload: arguments
 				}
 				console.error(rejectMessage)
@@ -689,7 +585,6 @@ var HexUploader = function(){
 				run(connection)
 				.then(log('HEX-UPLOADER: Writing page ' + (page + 1) + '/' + numPages, true))
 				.then(writePage(page))
-				.then(setQuirkbotsUploadProgress((page + 1) /  numPages))
 				.then(function() {
 					page++;
 					if(page == numPages){
@@ -747,7 +642,7 @@ var HexUploader = function(){
 		}
 	}
 	// Utils -------------------------------------------------------------------
-	var filterWrongSoftware = function (error) {
+	var earlyRejectOnWrongSoftware = function (error) {
 		return new Promise(function(resolve, reject){
 			if(error.step == 'upload' && error.payload && error.payload.length){
 				if(error.payload[0].step == 'checkSoftware'){
