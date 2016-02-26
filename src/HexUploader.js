@@ -62,40 +62,6 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	Object.defineProperty(self, 'uploadHex', {
-		value: uploadHex
-	});
-	/**
-	 * Uploads "quickly" a hex string to a connection.
-	 * It is quick because it will assume device is already on bootloader mode,
-	 * and will not restablish the communication connection after the upload.
-	 **/
-	var quickUploadHex = function(connection, hexString){
-		var promise = function(resolve, reject){
-			run(connection)
-			.then(log('HEX-UPLOADER: Started quick upload process', true))
-			.then(addHexDataToConnection(hexString))
-			.then(tryToExecute(upload, 10, 600, earlyRejectOnWrongSoftware))
-			.then(removeHexDataFromConnection)
-			.then(resolve)
-			.catch(function(){
-				delete connection.hexData;
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'quickUploadHex',
-					message: 'Quick upload failed',
-					payload: arguments
-				}
-				console.error(rejectMessage)
-				reject(rejectMessage)
-			});
-
-		}
-		return new Promise(promise);
-	}
-	Object.defineProperty(self, 'quickUploadHex', {
-		value: quickUploadHex
-	});
 	// -------------------------------------------------------------------------
 	var addHexDataToConnection = function(hexString){
 		return function(connection){
@@ -690,6 +656,14 @@ var HexUploader = function(){
 		return data;
 	}
 	// -------------------------------------------------------------------------
+	// External API ------------------------------------------------------------
+	// -------------------------------------------------------------------------
+	Object.defineProperty(self, 'uploadHex', {
+		value: uploadHex
+	});
+	Object.defineProperty(self, 'checkSoftware', {
+		value: checkSoftware
+	});
 
 }
 

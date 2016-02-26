@@ -134,8 +134,6 @@ var QuirkbotChromeExtension = function(){
 				return;
 			}
 
-
-
 			if(quirkbot.upload.pending){
 				// There is already an upload going on...
 				var rejectMessage = {
@@ -149,23 +147,24 @@ var QuirkbotChromeExtension = function(){
 				return;
 			}
 
-
-
-
 			//------------------------------------------------------------------
 			quirkbot.upload.pending = true;
+			quirkbot.upload.success = false;
+			quirkbot.upload.fail = false;
+
 			var hexUploader = new HexUploader();
 
 			hexUploader.uploadHex(connection, hexString)
 			.then(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.success = true;
+				quirkbot.upload.fail = false;
 				resolve(quirkbot);
-
 			})
 			.catch(function(){
 				quirkbot.upload.pending = false;
 				quirkbot.upload.fail = true;
+				quirkbot.upload.success = false;
 
 				var rejectMessage = {
 					file: 'Quirkbot',
@@ -175,9 +174,7 @@ var QuirkbotChromeExtension = function(){
 				}
 				console.error(rejectMessage)
 				reject(rejectMessage)
-			})
-
-
+			});
 		}
 		return new Promise(promise);
 	}
@@ -277,7 +274,17 @@ var QuirkbotChromeExtension = function(){
 
 				// If we got here, we got a complete message!
 
-				if(uuid) connection.quirkbot.uuid = uuid;
+				if(uuid) {
+					// If the uuid is simply a sequence of Zeros, we consider it invalid.
+					var invalidUuid = 0;
+					for (var i = 0; i < uuid.length; i++) {
+						invalidUuid += uuid[i];
+					}
+					if(!invalidUuid){
+						connection.quirkbot.uuid = uuid;
+					}
+
+				}
 				connection.quirkbot.nodes = nodes;
 
 				continue;
@@ -762,8 +769,9 @@ var QuirkbotChromeExtension = function(){
 						device: device,
 						buffer: [],
 						quirkbot : {
+							interface: 'serial',
 							connectedAt: Date.now(),
-							uuid: '',
+							uuid: 'TEMP' + Math.random().toFixed(12).substr(2),
 							nodes : [],
 							upload: {}
 						}
@@ -811,8 +819,10 @@ var QuirkbotChromeExtension = function(){
 	}
 	var monitorSingleConnection = function(connection){
 		var promise = function(resolve, reject){
-			// Since we are not doing the serial check anymore, just assume the connection is good
 			run(connection)
+			// We can now check if the board is on bootloader mode.
+			.then(detectBootloaderMode)
+			// If we got here, we assume the connection is stablished.
 			.then(handleFoundQuirkbot)
 			.then(resolve)
 			.catch(function() {
@@ -820,6 +830,22 @@ var QuirkbotChromeExtension = function(){
 			});
 
 		};
+		return new Promise(promise);
+	}
+	var detectBootloaderMode = function(connection){
+		var promise = function(resolve, reject){
+			var hexUploader = new HexUploader();
+			run(connection)
+			.then(hexUploader.checkSoftware('QUIRKBO'))
+			.then(function(connection) {
+				connection.quirkbot.bootloader = true;
+				resolve(connection)
+			})
+			.catch(function(error) {
+				connection.quirkbot.bootloader = false;
+				resolve(connection)
+			});
+		}
 		return new Promise(promise);
 	}
 	var handleFoundQuirkbot = function(connection){
