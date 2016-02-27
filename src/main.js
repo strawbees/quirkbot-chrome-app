@@ -1,5 +1,5 @@
 // Init the exrension ----------------------------------------------------------
-var quirkbotChromeExtension = new QuirkbotChromeExtension()
+var quirkbotChromeExtension = new QuirkbotChromeExtension();
 var inited = false;
 var init = function() {
 	if(inited) return;
