@@ -109,3 +109,28 @@ var delay = function(millis){
 		return new Promise(promise);
 	}
 }
+
+
+var safeWhile = function(conditionFn, loopFn, errorFn){
+	var start =  Date.now();
+	var forceBreak = false;
+	var breakFn = function(){
+		forceBreak = true;
+	}
+	if(typeof loopFn !== 'function'){
+		console.error('safeWhile: 2nd argument is not a function!');
+	}
+	while(conditionFn()){
+		if((Date.now() - start) > 2000){
+			console.error('safeWhile: loop ' + id + ' is stuck!');
+			if(typeof errorFn === 'function'){
+				errorFn();
+			}
+			break;
+		}
+		else if(forceBreak){
+			break;
+		}
+		loopFn(breakFn);
+	}
+}

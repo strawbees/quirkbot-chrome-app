@@ -22,33 +22,29 @@ var HexUploader = function(){
 		EXIT_BOOTLOADER: 0x45, // E
 		CR: 0x0D, // Carriage return
 		RESET_BITRATE: 1200,
-		UPLOAD_BITRATE: 57600
+		UPLOAD_BITRATE: 57600,
+		COMMUNICATION_BITRATE: 115200
 	}
 
 	/**
-	 * Uploads a hex string to a connection.
+	 * Uploads a hex string to a link.
 	 * It will try to put the device in bootloader mode, then try to upload the
 	 * hex, and finally try to restablish communication with the device.
 	 **/
-	var uploadHex = function(connection, hexString){
+	var uploadHex = function(link, hexString){
 		var promise = function(resolve, reject){
-			run(connection)
+			run(link)
 			.then(log('HEX-UPLOADER: Started upload process', true))
-			.then(addHexDataToConnection(hexString))
-			.then(log('HEX-UPLOADER: Ensure board is on Bootloader...', true))
-			.then(guaranteeBootaloderMode)
-			.then(log('HEX-UPLOADER: Trying to upload...', true))
-			.then(tryToExecute(upload, 10, 600, earlyRejectOnWrongSoftware))
-			.then(log('HEX-UPLOADER: Trying to exit the Bootloader...', true))
-			.then(tryToExecute(exitBootlader, 10, 1000))
-			.then(log('HEX-UPLOADER: Trying to open the communication connection...', true))
-			.then(tryToExecute(openCommunicationConnection, 10, 1000))
-			.then(delay(1500))
+			.then(addHexDataToLink(hexString))
+			.then(log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
+			.then(tryToExecute(enterBootaloderModeAndWriteData, 3, 1000))
+			.then(log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
+			.then(tryToExecute(exitBootaloderModeAndRestablishCommunication, 1))
 			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
-			.then(removeHexDataFromConnection)
+			.then(removeHexDataFromLink)
 			.then(resolve)
 			.catch(function(){
-				delete connection.hexData;
+
 				var rejectMessage = {
 					file: 'HexUploader',
 					step: 'uploadHex',
@@ -56,21 +52,28 @@ var HexUploader = function(){
 					payload: arguments
 				}
 				console.error(rejectMessage)
-				reject(rejectMessage)
+				run(link)
+				.then(removeHexDataFromLink)
+				.then(function () {
+					reject(rejectMessage)
+				})
+				.catch(function () {
+					reject(rejectMessage)
+				});
 			});
 
 		}
 		return new Promise(promise);
 	}
 	// -------------------------------------------------------------------------
-	var addHexDataToConnection = function(hexString){
-		return function(connection){
+	var addHexDataToLink = function(hexString){
+		return function(link){
 			var promise = function(resolve, reject){
 				var hexData = new CHROME_ARDUINO_INTEL_HEX(hexString).parse();
 				if (hexData == "FAIL") {
 					var rejectMessage = {
 						file: 'HexUploader',
-						step: 'addHexDataToConnection',
+						step: 'addHexDataToLink',
 						message: 'Could not parse hexString.',
 						payload: hexString
 					}
@@ -81,40 +84,47 @@ var HexUploader = function(){
 				// pad data to correct page size
 				pad(hexData, avrProtocol.PAGE_SIZE)
 
-				connection.hexData = hexData;
-				resolve(connection)
+				link.hexData = hexData;
+				resolve(link)
 			}
 			return new Promise(promise);
 		}
 	}
-	var removeHexDataFromConnection = function(connection){
+	var removeHexDataFromLink = function(link){
 		var promise = function(resolve, reject){
-			delete connection.hexData;
-			resolve(connection)
+			delete link.hexData;
+			resolve(link)
 		}
 		return new Promise(promise);
 
 	}
 	var connectWithParams = function(options){
-		return function(connection){
+		return function(link){
 			var promise = function(resolve, reject){
-				SerialApi.connect(connection.device.path, options)
-				.then(function(connectionInfo){
-					if (typeof(connectionInfo) == "undefined" ||
-						typeof(connectionInfo.connectionId) == "undefined" ||
-						connectionInfo.connectionId == -1){
+				run(link)
+				.then(log('HEX-UPLOADER: Connecting with params...', true))
+				.then(function() {
+					options.name = link.device.path;
+					return SerialApi.connect(link.device.path, options);
+				})
+				.then(function(connection){
+					if (typeof(connection) == "undefined" ||
+						typeof(connection.connectionId) == "undefined" ||
+						connection.connectionId == -1){
 						var rejectMessage = {
 							file: 'HexUploader',
 							step: 'connectWithParams',
 							message: 'Could not connect',
-							payload: connectionInfo
+							payload: connection
 						}
 						console.error(rejectMessage)
 						reject(rejectMessage)
 					}
 					else{
-						connection.connectionInfo = connectionInfo;
-						resolve(connection);
+						link.connection = connection;
+						run(link)
+						.then(log('HEX-UPLOADER: Connected!', true))
+						.then(resolve(link));
 					}
 				})
 				.catch(function(){
@@ -131,13 +141,13 @@ var HexUploader = function(){
 			return new Promise(promise);
 		}
 	}
-	var disconnect = function(connection){
+	var disconnect = function(link){
 		var promise = function(resolve, reject){
-			SerialApi.disconnect(connection.connectionInfo.connectionId)
+			SerialApi.disconnect(link.connection.connectionId)
 			.then(function(success){
 				if(success){
-					delete connection.connectionInfo;
-					resolve(connection);
+					delete link.connection;
+					resolve(link);
 				}
 				else {
 					var rejectMessage = {
@@ -163,29 +173,60 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var disconnectAnyway = function(connection){
+	var disconnectAnyway = function(link){
 		var promise = function(resolve, reject){
-			if(!connection.connectionInfo){
-				run(connection)
+			if(!link.connection){
+				run(link)
 				.then(log('HEX-UPLOADER: Desconnecting: skipped!', true))
 				.then(resolve)
 				return;
 			}
-			run(connection)
+			run(link)
 			.then(log('HEX-UPLOADER: Desconnecting: using SerialApi...', true))
 			.then(disconnect)
 			.then(log('HEX-UPLOADER: Disconnected!', true))
 			.then(resolve)
 			.catch(function(){
-				resolve(connection)
+				resolve(link)
 			})
 		}
 		return new Promise(promise);
 	}
+	/*var forceDisconnectPort = function(port){
+		var promise = function(resolve, reject){
+			// Get all the current connections
+			SerialApi.getConnections()
+			.then(function(connections) {
+				// Filter the ones that are on the same port as the current connection
+				var portConnections = connections.filter(function (connection) {
+					return connection.name == port;
+				});
+				// Add the current connection
+				return Promise.all(portConnections.map(function (connection) {
+					return new Promise(function(resolve, reject){
+						SerialApi.disconnect(connection.connectionId)
+						.then(resolve)
+						.catch(resolve);
+					});
+				}));
+			});
+			.catch(function() {
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'forceDisconnectPort',
+					message: 'Failed to disconnect port.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}*/
 	var send = function(payload){
-		return function(connection){
+		return function(link){
 			var promise = function(resolve, reject){
-				SerialApi.send(connection.connectionInfo.connectionId, hexToBin(payload))
+				SerialApi.send(link.connection.connectionId, hexToBin(payload))
 				.then(function(sendInfo){
 					if(sendInfo.error){
 						var rejectMessage = {
@@ -197,7 +238,7 @@ var HexUploader = function(){
 						console.error(rejectMessage)
 						reject(rejectMessage)
 					}
-					else resolve(connection)
+					else resolve(link)
 				})
 				.catch(function () {
 					var rejectMessage = {
@@ -215,10 +256,10 @@ var HexUploader = function(){
 	}
 	var waitForResponse = function(response){
 		var timeout = 500;
-		return function(connection){
+		return function(link){
 			var promise = function(resolve, reject){
 				var onReceive = function(message){
-					if(message.connectionId != connection.connectionInfo.connectionId)
+					if(message.connectionId != link.connection.connectionId)
 						return;
 
 					var buffer = new Uint8Array(message.data);
@@ -226,7 +267,7 @@ var HexUploader = function(){
 					if(compareArrays(buffer, response)){
 						chrome.serial.onReceive.removeListener(onReceive);
 						clearTimeout(timer);
-						resolve(connection)
+						resolve(link)
 					}
 					else {
 						chrome.serial.onReceive.removeListener(onReceive);
@@ -269,9 +310,9 @@ var HexUploader = function(){
 		}
 	}
 	var writeAndGetResponse = function(payload, response){
-		return function(connection){
+		return function(link){
 			var promise = function(resolve, reject){
-				run(connection)
+				run(link)
 				.then(send(payload))
 				.then(waitForResponse(response))
 				.then(resolve)
@@ -289,105 +330,174 @@ var HexUploader = function(){
 			return new Promise(promise);
 		}
 	}
-	var waitForSameDeviceToDisappear = function(connection){
+	var hopefullyWaitForDeviceRefresh = function(link){
+		var promise = function(resolve, reject){
+			run(link)
+			.then(log('HEX-UPLOADER: Hopefully waiting device refresh...', true))
+			.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
+			.then(waitForSameDeviceToDisappear)
+			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
+			.then(waitForNewDeviceToAppear)
+			.then(log('HEX-UPLOADER: Device has refreshed.', true))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'hopefullyWaitForDeviceRefresh',
+					message: 'Could not detect a device reset.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				run(link)
+				.then(log('HEX-UPLOADER: Device did not refresh, resolving anyway...', true))
+				.then(resolve)
+			});
+		}
+		return new Promise(promise);
+	}
+	var waitForSameDeviceToDisappear = function(link){
 		var promise = function(resolve, reject){
 			var count = 0;
-			var check = setInterval(function(){
+			var countAndScheduleCheck = function() {
+				count++;
+				if(count == 25){
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'waitForSameDeviceToDisappear',
+						message: 'Device never disappeared.',
+						payload: ''
+					}
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				}
+				else{
+					setTimeout(check, 150);
+				}
+			}
+			var check = function(){
 				SerialApi.getDevices()
 				.then(function(devices){
-					count++;
 					var exists = false;
 					for (var i = 0; i < devices.length; i++) {
-						if(devices[i].path == connection.device.path){
+						if((devices[i].displayName || devices[i].vendorId || devices[i].productId)
+							&& devices[i].path == link.device.path){
 							exists = true;
 							break;
 						}
 					};
 					if(!exists){
-						clearInterval(check);
-						console.log('HEX-UPLOADER: Device disappeared:', connection.device.path)
-						resolve(connection)
+						console.log('HEX-UPLOADER: Device disappeared:', link.device.path)
+						resolve(link)
 						return;
 					}
-					if(count == 50){
-						clearInterval(check);
-						var rejectMessage = {
-							file: 'HexUploader',
-							step: 'waitForSameDeviceToDisappear',
-							message: 'Device never disappeared.',
-							payload: ''
-						}
-						console.error(rejectMessage)
-						reject(rejectMessage)
+					else{
+						countAndScheduleCheck();
 					}
-				})
 
-			}, 150)
+				})
+				.catch(countAndScheduleCheck)
+			}
+			check();
 		}
 		return new Promise(promise);
 	}
-	var waitForNewDeviceToAppear = function(connection){
+	var waitForNewDeviceToAppear = function(link){
 		var promise = function(resolve, reject){
 			SerialApi.getDevices()
 			.then(function(intialDevices){
 				var count = 0;
 				var initialPaths = {}
 				intialDevices.forEach(function(device){
-					initialPaths[device.path] = true;
-				})
-				var check = setInterval(function(){
+					if(device.displayName || device.vendorId || device.productId){
+						initialPaths[device.path] = true;
+					}
+				});
+				var countAndScheduleCheck = function() {
+					count++;
+					if(count == 25){
+						var rejectMessage = {
+							file: 'HexUploader',
+							step: 'waitForNewDeviceToAppear',
+							message: 'Device never appeared.',
+							payload: ''
+						}
+						console.error(rejectMessage)
+						reject(rejectMessage)
+					}
+					else{
+						setTimeout(check, 150);
+					}
+				}
+				var check = function(){
 					SerialApi.getDevices()
 					.then(function(devices){
 						count++;
 						for (var i = 0; i < devices.length; i++) {
-							if(!initialPaths[devices[i].path]){
+							if((devices[i].displayName || devices[i].vendorId || devices[i].productId)
+								&& !initialPaths[devices[i].path]){
 								clearInterval(check);
-								connection.device.originalPath = connection.device.path;
-								connection.device.path = devices[i].path;
-								console.log('HEX-UPLOADER: New device appeared:', connection.device.path)
-								resolve(connection)
+								link.device.originalPath = link.device.path;
+								link.device.path = devices[i].path;
+								console.log('HEX-UPLOADER: New device appeared:', link.device.path)
+								resolve(link)
 								return;
 							}
-						};
-						if(count == 50){
-							clearInterval(check);
-							var rejectMessage = {
-								file: 'HexUploader',
-								step: 'waitForNewDeviceToAppear',
-								message: 'Device never appeared.',
-								payload: ''
-							}
-							console.error(rejectMessage)
-							reject(rejectMessage)
 						}
-					})
+						countAndScheduleCheck();
 
-				}, 150)
+					})
+					.catch(countAndScheduleCheck);
+				}
+				check();
 			});
 
 		}
 		return new Promise(promise);
 	}
-	var guaranteeBootaloderMode = function(connection){
+	var enterBootaloderModeAndWriteData = function(link, hexString){
 		var promise = function(resolve, reject){
-			run(connection)
-			.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
-			.then(checkSoftware('QUIRKBO'))
+			run(link)
+			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
+			.then(tryToExecute(guaranteeEnterBootaloderMode, 2, 1000))
+			.then(log('HEX-UPLOADER: Trying to writeData...', true))
+			.then(tryToExecute(writeData, 3, 600))
 			.then(resolve)
 			.catch(function(){
-				run(connection)
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'enterBootaloderModeAndWriteData',
+					message: 'Failed to enter bootloader and write data',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+
+		}
+		return new Promise(promise);
+	}
+	var guaranteeEnterBootaloderMode = function(link){
+		var promise = function(resolve, reject){
+			run(link)
+			.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
+			.then(checkSoftware('QUIRKBO'))
+			.then(log('HEX-UPLOADER: Bootloader confirmed!', true))
+			.then(resolve)
+			.catch(function(){
+				run(link)
+				.then(log('HEX-UPLOADER: Quirkbot is NOT on bootloader mode.', true))
 				.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
-				.then(tryToExecute(enterBootaloderMode, 10, 600))
-				//.then(delay(500))
+				.then(tryToExecute(enterBootaloderMode, 10, 60))
 				.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-				.then(tryToExecute(openUploadConnection, 10, 1000))
+				.then(tryToExecute(openCommunicationConnection, 10, 500))
 				.then(log('HEX-UPLOADER: Checking for software indetifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
 				.then(checkSoftware('QUIRKBO'))
+				.then(log('HEX-UPLOADER: Bootloader confirmed!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
 						file: 'HexUploader',
-						step: 'guaranteeBootaloderMode',
+						step: 'guaranteeEnterBootaloderMode',
 						message: 'Could not guarantee bootloader mode.',
 						payload: arguments
 					}
@@ -398,21 +508,13 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var enterBootaloderMode = function(connection){
+	var enterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
-			run(connection)
-			.then(log('HEX-UPLOADER: Making sure port is disconnected', true))
-			.then(disconnectAnyway)
-			.then(delay(100))
-			.then(log('HEX-UPLOADER: Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection', true))
-			.then(connectWithParams({bitrate: avrProtocol.RESET_BITRATE}))
-			.then(delay(300))
-			.then(disconnect)
-			.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
-			.then(waitForSameDeviceToDisappear)
-			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
-			.then(waitForNewDeviceToAppear)
-			.then(log('HEX-UPLOADER: Entered bootloader mode!', true))
+			run(link)
+			.then(log('HEX-UPLOADER: Bootloader trigger.', true))
+			.then(bootloaderTrigger)
+			.then(log('HEX-UPLOADER: Wait device refresh.', true))
+			.then(hopefullyWaitForDeviceRefresh)
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -427,18 +529,39 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var upload = function(connection){
+	var bootloaderTrigger = function(link){
 		var promise = function(resolve, reject){
-			run(connection)
-			.then(log('HEX-UPLOADER: Write pages...', true))
-			.then(writePagesRecursivelly)
-
+			run(link)
+			.then(log('HEX-UPLOADER: Making sure port is disconnected', true))
+			.then(disconnectAnyway)
+			.then(delay(100))
+			.then(log('HEX-UPLOADER: Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection...', true))
+			.then(function(link){
+				// Noticed on Windows 10 that chrome.serial.connect reported a
+				// connection error, but the board would go on bootloader anyway.
+				// Since the point of this connection is just to trigger the booloader
+				// we will ignore errors and resolve anyway
+				return new Promise(function(resolve, reject) {
+					run(link)
+					.then(log('HEX-UPLOADER: connecting (ignore connection error)...', true))
+					.then(connectWithParams({
+						bitrate: avrProtocol.RESET_BITRATE
+					}))
+					.then(resolve)
+					.catch(function () {
+						resolve(link)
+					});
+				});
+			}) 
+			.then(delay(100))
+			.then(log('HEX-UPLOADER: disconnecting...', true))
+			.then(disconnectAnyway)
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
 					file: 'HexUploader',
-					step: 'upload',
-					message: 'Could not upload.',
+					step: 'bootloaderTrigger',
+					message: 'Could not trigger bootloaer.',
 					payload: arguments
 				}
 				console.error(rejectMessage)
@@ -447,11 +570,35 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var openUploadConnection = function(connection){
+	var writeData = function(link){
 		var promise = function(resolve, reject){
-			run(connection)
+			run(link)
+			.then(log('HEX-UPLOADER: Setting programing address...', true))
+			.then(setProgrammingAddress)
+			.then(log('HEX-UPLOADER: Write pages...', true))
+			.then(writePagesRecursivelly)
+
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'writeData',
+					message: 'Could not write data.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
+	var openUploadConnection = function(link){
+		var promise = function(resolve, reject){
+			run(link)
 			.then(log('HEX-UPLOADER: Connecting with '+avrProtocol.UPLOAD_BITRATE+' baudrate', true))
-			.then(connectWithParams({bitrate: avrProtocol.UPLOAD_BITRATE}))
+			.then(connectWithParams({
+				bitrate: avrProtocol.UPLOAD_BITRATE
+			}))
 			.then(delay(500))
 			.then(resolve)
 			.catch(function(){
@@ -467,18 +614,16 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var openCommunicationConnection = function(connection){
+	var openCommunicationConnection = function(link){
 		var promise = function(resolve, reject){
-			run(connection)
-			.then(disconnectAnyway)
-			.then(delay(2000))
-			.then(log('HEX-UPLOADER: Connecting with 115200 baudrate', true))
-			.then(connectWithParams({
-				bitrate: 115200,
-				persistent: true,
-				name: connection.device.path
-			}))
+			run(link)
+			//.then(disconnectAnyway)
 			.then(delay(500))
+			.then(log('HEX-UPLOADER: Connecting with '+avrProtocol.COMMUNICATION_BITRATE+' baudrate', true))
+			.then(connectWithParams({
+				bitrate: avrProtocol.COMMUNICATION_BITRATE
+			}))
+			//.then(delay(500))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -494,12 +639,12 @@ var HexUploader = function(){
 		return new Promise(promise);
 	}
 	var checkSoftware = function(identifier){
-		return function (connection) {
+		return function (link) {
 			var identifierChars = identifier.split('').map(function(s){
 				return s.charCodeAt(0);
 			})
 			var promise = function(resolve, reject){
-				run(connection)
+				run(link)
 				.then(writeAndGetResponse([avrProtocol.SOFTWARE_IDENTIFIER], identifierChars))
 				.then(log('HEX-UPLOADER: Software match!', true))
 				.then(resolve)
@@ -517,15 +662,33 @@ var HexUploader = function(){
 			return new Promise(promise);
 		}
 	}
-	var exitBootlader = function(connection){
+	var exitBootaloderModeAndRestablishCommunication = function(link){
 		var promise = function(resolve, reject){
-			run(connection)
+			run(link)
+			.then(log('HEX-UPLOADER: Trying to issue command to exit bootloader...', true))
+			.then(tryToExecute(exitBootlader, 10, 200))
+			.then(log('HEX-UPLOADER: Wait device refresh.', true))
+			.then(tryToExecute(hopefullyWaitForDeviceRefresh, 1))
+			.then(log('HEX-UPLOADER: Trying to open the communication connection...', true))
+			.then(tryToExecute(openCommunicationConnection, 10, 700))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'exitBootaloderModeAndRestablishCommunication',
+					message: 'Could not exit bootloader mode and re-establish communication.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
+	var exitBootlader = function(link){
+		var promise = function(resolve, reject){
+			run(link)
 			.then(writeAndGetResponse([avrProtocol.EXIT_BOOTLOADER], [avrProtocol.CR]))
-			.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
-			.then(waitForSameDeviceToDisappear)
-			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
-			.then(waitForNewDeviceToAppear)
-			.then(log('HEX-UPLOADER: Exited bootloader!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -540,19 +703,46 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-	var writePagesRecursivelly = function(connection) {
+	var setProgrammingAddress = function(link){
 		var promise = function(resolve, reject){
-			var numPages = connection.hexData.length / avrProtocol.PAGE_SIZE;
+			var addressBytes = storeAsTwoBytes(avrProtocol.PROGRAM_ADDRESS);
+			run(link)
+			.then(writeAndGetResponse(
+				[
+					avrProtocol.SET_ADDRESS,
+					addressBytes[0],
+					addressBytes[1]
+				],
+				[avrProtocol.CR])
+			)
+			.then(log('HEX-UPLOADER: Address set!', true))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'enterProgramMode',
+					message: 'Could not enter program mode.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
+	var writePagesRecursivelly = function(link) {
+		var promise = function(resolve, reject){
+			var numPages = link.hexData.length / avrProtocol.PAGE_SIZE;
 
 			var page = 0;
 			var write = function(){
-				run(connection)
+				run(link)
 				.then(log('HEX-UPLOADER: Writing page ' + (page + 1) + '/' + numPages, true))
 				.then(writePage(page))
 				.then(function() {
 					page++;
 					if(page == numPages){
-						resolve(connection)
+						resolve(link)
 					}
 					else write();
 				})
@@ -573,16 +763,16 @@ var HexUploader = function(){
 		return new Promise(promise);
 	}
 	var writePage = function(pageNo) {
-		return function(connection){
+		return function(link){
 			var promise = function(resolve, reject){
-				var payload =  connection.hexData.slice(
+				var payload =  link.hexData.slice(
 					pageNo *  avrProtocol.PAGE_SIZE,
 					(pageNo + 1) *  avrProtocol.PAGE_SIZE
 				);
 
 				var sizeBytes = storeAsTwoBytes(avrProtocol.PAGE_SIZE);
 
-				run(connection)
+				run(link)
 				.then(
 					writeAndGetResponse(
 						[ avrProtocol.WRITE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ].concat(payload),
@@ -635,7 +825,6 @@ var HexUploader = function(){
 		}
 		return hexes;
 	}
-
 	var hexToBin = function(hex) {
 		var buffer = new ArrayBuffer(hex.length);
 		var bufferView = new Uint8Array(buffer);
@@ -650,9 +839,15 @@ var HexUploader = function(){
 		return [hi, lo];
 	}
 	var pad = function(data, pageSize) {
-		while (data.length % pageSize != 0) {
-			data.push(0);
-		}
+		safeWhile(
+			function () {
+				return data.length % pageSize != 0;
+			},
+			function () {
+				data.push(0);
+			}
+		);
+
 		return data;
 	}
 	// -------------------------------------------------------------------------
