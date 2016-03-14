@@ -41,6 +41,7 @@ SerialApi.connect = function (path, options) {
 			});
 		}, 500);
 		try{
+			options = options || {};
 			options.name = options.name || path;
 			chrome.serial.connect(
 				path,

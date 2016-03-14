@@ -2,4 +2,8 @@
 node_modules
 npm-debug.log
 quirkbot.zip
+quirkbot-chrome-app
+quirkbot-chrome-app.zip
+quirkbot-chrome-app-*
 s3_publish
+aws-config

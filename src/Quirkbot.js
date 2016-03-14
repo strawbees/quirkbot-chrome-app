@@ -16,7 +16,7 @@ var QuirkbotChromeExtension = function(){
 	// stores the last time the extension was pinged
 	var pingTime = 0;
 	// all current quirkbot links
-	var linksStash = [];
+	var linkStash = [];
 	// statuses on how many times a device was monitored or if it is doing a reset
 	var devicesMonitorStatus = {};
 	// Listerner pool for model change events
@@ -97,9 +97,9 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 
 			var link;
-			for (var i = 0; i < linksStash.length; i++) {
-				if(linksStash[i].quirkbot.uuid == quirkbotUuid){
-					link = linksStash[i];
+			for (var i = 0; i < linkStash.length; i++) {
+				if(linkStash[i].quirkbot.uuid == quirkbotUuid){
+					link = linkStash[i];
 				}
 			};
 
@@ -187,12 +187,12 @@ var QuirkbotChromeExtension = function(){
 	// Serial monitoring -------------------------------------------------------
 	var onSerialReceive = function(message){
 		var link;
-		for (var i = 0; i < linksStash.length; i++) {
-			if(typeof linksStash[i].connection === 'undefined'){
+		for (var i = 0; i < linkStash.length; i++) {
+			if(typeof linkStash[i].connection === 'undefined'){
 				continue;
 			}
-			if(linksStash[i].connection.connectionId == message.connectionId){
-				link = linksStash[i];
+			if(linkStash[i].connection.connectionId == message.connectionId){
+				link = linkStash[i];
 			}
 		};
 		if(!link)	return;
@@ -372,7 +372,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var manageQuirkbotsInModel = function(){
 		// Figure out which links have detected quirkbots
-		var linksWithQuirkbot = linksStash.filter(function(link){
+		var linksWithQuirkbot = linkStash.filter(function(link){
 			// Return true only for detected quirkbots
 			return link.detected;
 		});
@@ -380,7 +380,6 @@ var QuirkbotChromeExtension = function(){
 			return link.quirkbot;
 		});
 	}
-
 	var recursivellydispatchModelChangeEvent = function(){
 		// Make sure to only dispatch is there is a change in the model.
 		var stringified = JSON.stringify(model);
@@ -418,7 +417,7 @@ var QuirkbotChromeExtension = function(){
 				})
 				Promise.all(promises)
 				.then(function(){
-					linksStash = []
+					linkStash = []
 					resolve();
 				})
 				.catch(function(error){
@@ -426,7 +425,7 @@ var QuirkbotChromeExtension = function(){
 						'Error clearing existing connections, resolving anyway.',
 						error
 					);
-					linksStash = []
+					linkStash = []
 					resolve();
 				});
 			})
@@ -435,7 +434,7 @@ var QuirkbotChromeExtension = function(){
 					'Error clearing existing connections, resolving anyway.',
 					error
 				);
-				linksStash = []
+				linkStash = []
 				resolve();
 			});
 		}
@@ -476,7 +475,7 @@ var QuirkbotChromeExtension = function(){
 	var sendDataToLinks = function(){
 		var promise = function(resolve, reject){
 
-			var promises = linksStash.map(function(link) {
+			var promises = linkStash.map(function(link) {
 				return sendDataToSingleLink(link)
 			});
 			Promise.all(promises)
@@ -541,8 +540,10 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			run()
 			.then(log('MONITOR: Start monitor routine', true))
-			.then(disconnectInvalidConnections)
-			.then(log('MONITOR: disconnectInvalidConnections'))
+			.then(disconnectDeadConnections)
+			.then(log('MONITOR: disconnectDeadConnections'))
+			.then(disconnectConnectionsOnDeadDevices)
+			.then(log('MONITOR: disconnectConnectionsOnDeadDevices'))
 			.then(disconnectConnectionsNotOnStack)
 			.then(log('MONITOR: disconnectConnectionsNotOnStack'))
 			.then(removeLostLinksFromStash)
@@ -588,15 +589,31 @@ var QuirkbotChromeExtension = function(){
 		};
 		return new Promise(promise);
 	}
-	var disconnectInvalidConnections = function(){
+	var disconnectDeadConnections = function(){
 		var promise = function (resolve, reject) {
+			// To figure out wich connections are dead, try to get the
+			// control signals of each of them.
 			SerialApi.getConnections()
 			.then(function(connections) {
-				var invalid = connections.filter(function (connection) {
-					return !connection.bitrate;
+				return Promise.all(connections.map(function (connection) {
+					SerialApi.getControlSignals(connection.connectionId)
+					.then(function() {
+						resolve();
+					})
+					.catch(function() {
+						resolve(connection);
+					})
+				}));
+			})
+			// Filter only the dead connections
+			.then(function(connections) {
+				return connections.filter(function (connections) {
+					return connections ? true : false;
 				});
-				return Promise.all(invalid.map(function (connection) {
-					console.log('HEX AAAAA - INVALID', connection)
+			})
+			// Disconnect all of them
+			.then(function(connections) {
+				return Promise.all(connections.map(function (connection) {
 					return SerialApi.disconnect(connection.connectionId)
 				}))
 			})
@@ -604,7 +621,62 @@ var QuirkbotChromeExtension = function(){
 			.catch(function () {
 				var rejectMessage = {
 					file: 'Quirkbot',
-					step: 'disconnectInvalidConnections',
+					step: 'disconnectDeadConnections',
+					message: 'Error trying to disconnect ports. Resolving anyway',
+					payload: arguments
+				}
+				console.error('MONITOR:', rejectMessage);
+				resolve();
+			});
+
+		};
+		return new Promise(promise);
+	}
+	var disconnectConnectionsOnDeadDevices = function(){
+		var promise = function (resolve, reject) {
+			// Get a lost of connections and devices
+			var devices;
+			SerialApi.getDevices()
+			.then(function(_devices) {
+				devices = _devices;
+				return SerialApi.getConnections();
+			})
+			// Match the connections with the device list, include it if the
+			// device looks dead
+			.then(function(connections) {
+				return connections.filter(function (connection) {
+					var dead = false;
+					devices.forEach(function(device) {
+						if(device.path == connection.name){
+							if(device.displayName && device.displayName.indexOf('Quirkbot') != -1){
+								return;
+							}
+							if(device.productId && device.productId === 0xF004){
+								return;
+							}
+							if(device.productId && device.productId === 0xF005){
+								return;
+							}
+							if(device.vendorId && device.vendorId === 0x2886){
+								return;
+							}
+							dead = true;
+						}
+					})
+					return dead;
+				});
+			})
+			// Disconnect all of them
+			.then(function(connections) {
+				return Promise.all(connections.map(function (connection) {
+					return SerialApi.disconnect(connection.connectionId)
+				}))
+			})
+			.then(resolve)
+			.catch(function () {
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'disconnectConnectionsOnDeadDevices',
 					message: 'Error trying to disconnect ports. Resolving anyway',
 					payload: arguments
 				}
@@ -621,7 +693,7 @@ var QuirkbotChromeExtension = function(){
 			.then(function(connections) {
 				var notOnStack = connections.filter(function (connection) {
 					var exists = false;
-					linksStash.forEach(function(link) {
+					linkStash.forEach(function(link) {
 						if(link.connection.connectionId == connection.connectionId){
 							exists = true;
 						}
@@ -629,7 +701,6 @@ var QuirkbotChromeExtension = function(){
 					return !exists;
 				});
 				return Promise.all(notOnStack.map(function (connection) {
-					console.log('HEX AAAAA - STACK', connection)
 					return SerialApi.disconnect(connection.connectionId)
 				}))
 			})
@@ -650,10 +721,71 @@ var QuirkbotChromeExtension = function(){
 	}
 	var removeLostLinksFromStash = function(){
 		var promise = function (resolve, reject) {
+			// Get a fresh list of connections
+			SerialApi.getConnections()
+			.then(function(connections) {
+				// Update the connection of the links
+				linkStash.forEach(function(link){
+					var matchingConnections = connections.filter(function(connection){
+						return connection.connectionId == link.connection.connectionId;
+					});
+					if(!matchingConnections.length){
+						delete link.connection;
+						return;
+					}
+					link.connection = matchingConnections[0];
+				});
+
+				// Figure out wich links where lost
+				var lostLinks = linkStash.filter(function(link){
+					// Ignore links with a pending upload
+					if(link.quirkbot.upload.pending){
+						return false;
+					}
+					// Add links with no connection, or with an invalid collection
+					if(!link.connection || !link.connection.bitrate){
+						return true;
+					}
+				});
+
+				// Remove the lost links from the stash
+				lostLinks.forEach(function(link){
+					var index = linkStash.indexOf(link);
+					if(index == -1){
+						return;
+					}
+					console.log('%cMONITOR: Disconnected!', 'color: red', link);
+					linkStash.splice(index, 1);
+				});
+
+				// Update the model
+				manageQuirkbotsInModel();
+
+				// Never reject
+				resolve();
+			})
+			.then(resolve)
+			.catch(function () {
+				var rejectMessage = {
+					file: 'Quirkbot',
+					step: 'removeLostLinksFromStash',
+					message: 'Error trying to get connection list. Resolving anyway',
+					payload: arguments
+				}
+				console.error('MONITOR:', rejectMessage);
+				resolve();
+			});
+
+
+		};
+		return new Promise(promise);
+	}
+	/*var removeLostLinksFromStash = function(){
+		var promise = function (resolve, reject) {
 			var promises = [];
-			for (var i = linksStash.length - 1; i >= 0; i--) {
+			for (var i = linkStash.length - 1; i >= 0; i--) {
 				(function(index) {
-					var link = linksStash[i];
+					var link = linkStash[i];
 					var promise = function(resolve, reject) {
 						// If there is an upload pending, resolve early
 
@@ -683,7 +815,7 @@ var QuirkbotChromeExtension = function(){
 							console.error('MONITOR:', rejectMessage)
 							// If not, remove that link from the stash
 							console.log('%cMONITOR: Disconnected!', 'color: red', link);
-							linksStash.splice(index, 1);
+							linkStash.splice(index, 1);
 							manageQuirkbotsInModel();
 
 							run(link)
@@ -705,7 +837,7 @@ var QuirkbotChromeExtension = function(){
 
 		};
 		return new Promise(promise);
-	}
+	}*/
 	var fetchDevices = function(){
 		var promise = function(resolve, reject){
 
@@ -747,6 +879,9 @@ var QuirkbotChromeExtension = function(){
 				if(device.displayName && device.displayName.indexOf('Quirkbot') != -1){
 					return true;
 				}
+				if(device.productId && device.productId === 0xF004){
+					return true;
+				}
 				if(device.productId && device.productId === 0xF005){
 					return true;
 				}
@@ -772,7 +907,7 @@ var QuirkbotChromeExtension = function(){
 				}
 			});
 			// Flag possible permission problem
-			if(linksStash.length || (totalTty && !failedTty) ){
+			if(linkStash.length || (totalTty && !failedTty) ){
 				delete model.platform.serialPermissionError;
 			}
 			else if(failedTty && model.platform.os == 'linux'){
@@ -829,10 +964,10 @@ var QuirkbotChromeExtension = function(){
 	var filterDevicesAlreadyInStash = function(devices){
 		var promise = function(resolve, reject){
 			devices = devices.filter(function(device){
-				for (var i = 0; i < linksStash.length; i++) {
-					var link = linksStash[i];
+				for (var i = 0; i < linkStash.length; i++) {
+					var link = linkStash[i];
 
-					if(link.device.path == device.path){
+					if(link.device.path == device.path || link.device.path == device.originalPath ){
 						return false;
 					}
 				}
@@ -882,8 +1017,7 @@ var QuirkbotChromeExtension = function(){
 			SerialApi.connect(
 				device.path,
 				{
-					bitrate: 115200,
-					name: device.path
+					bitrate: 115200
 				}
 			)
 			.then(function(connection){
@@ -972,7 +1106,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var handleFoundQuirkbot = function(link){
 		var promise = function(resolve, reject){
-			linksStash.push(link);
+			linkStash.push(link);
 
 			// Quirkbot detected!
 			link.detected = true;

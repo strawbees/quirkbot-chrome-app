@@ -11,7 +11,6 @@
 	"app": {
 		"background": {
 			"scripts": [
-				"reset-firmware/firmware.js",
 				"src/libs/chrome-arduino.js",
 				"src/libs/ChromeExternalAPIServer.js",
 				"src/Utils.js",
