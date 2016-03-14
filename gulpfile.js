@@ -26,9 +26,23 @@ gulp.task('clean', function () {
 });
 
 /**
- * Generate the "platform" entry on the package index
+ * Gives a warning in case the current release you are building overwrites an
+ * existing release.
  */
-gulp.task('build', ['clean'], function (cb) {
+gulp.task('check-release-overwrite', [], function () {
+	var manifest = JSON.parse(fs.readFileSync(path.resolve('manifest.json')).toString());
+	if(manifest.version == PACKAGE.version){
+		return gulp.src('')
+		.pipe($.prompt.confirm(`There is already a release with the version ${PACKAGE.version}. Do you want to overwrite it (Y)?\n (If you want to create a new release, answer (N) and updated the version in package.json first)`))
+	}
+
+});
+
+
+/**
+ * Bundles the source code into a versioned zip file
+ */
+gulp.task('bundle', ['check-release-overwrite','clean'], function (cb){
 	var exec = require('child_process').exec;
 
 	exec(
@@ -39,8 +53,23 @@ gulp.task('build', ['clean'], function (cb) {
 			cb();
 		}
 	);
+
 });
 
+/**
+ * Generate the new manifest entry on the package index
+ */
+gulp.task('build', ['bundle'], function (cb) {
+
+	// Create generate the library properties file
+	var manifest = fs.readFileSync('manifest.template.json').toString()
+	.split('{{VERSION}}').join(PACKAGE.version)
+
+	// Save the new properties
+	fs.writeFileSync('manifest.json',manifest);
+
+	cb();
+});
 
 /**
  * Builds and publish to s3
