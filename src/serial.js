@@ -41,6 +41,7 @@ SerialApi.connect = function (path, options) {
 			});
 		}, 500);
 		try{
+			options = options || {};
 			options.name = options.name || path;
 			chrome.serial.connect(
 				path,
@@ -434,6 +435,7 @@ SerialApi.checkRuntimeError = function(resolve, reject, rejectStep, timer){
 		clearTimeout(timer);
 
 		if(chrome.runtime.lastError){
+			var message = chrome.runtime.lastError.message;
 			reject({
 				file: 'Serial',
 				step: 'checkRuntimeError -> ' + rejectStep,
