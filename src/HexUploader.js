@@ -343,114 +343,11 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
-
-	/*var waitForSameDeviceToDisappear = function(link){
-		var promise = function(resolve, reject){
-			var count = 0;
-			var countAndScheduleCheck = function() {
-				count++;
-				if(count == 20){
-					var rejectMessage = {
-						file: 'HexUploader',
-						step: 'waitForSameDeviceToDisappear',
-						message: 'Device never disappeared.',
-						payload: ''
-					}
-					console.error(rejectMessage)
-					reject(rejectMessage)
-				}
-				else{
-					setTimeout(check, 150);
-				}
-			}
-			var check = function(){
-				SerialApi.getDevices()
-				.then(filterDevicesByUSBDescriptors)
-				.then(function(devices){
-					var exists = false;
-					console.log('hex', count, devices)
-					for (var i = 0; i < devices.length; i++) {
-						if(devices[i].path == link.device.path){
-							exists = true;
-							break;
-						}
-					};
-					if(!exists){
-						console.log('HEX-UPLOADER: Device disappeared:', link.device.path)
-						link.referenceDevices = devices;
-						resolve(link)
-						return;
-					}
-					else{
-						countAndScheduleCheck();
-					}
-
-				})
-				.catch(countAndScheduleCheck)
-			}
-			check();
-		}
-		return new Promise(promise);
-	}
-	var waitForNewDeviceToAppear = function(link){
-		var promise = function(resolve, reject){
-			//SerialApi.getDevices()
-			run(link.referenceDevices)
-			.then(filterDevicesByUSBDescriptors)
-			.then(function(intialDevices){
-				var count = 0;
-				var initialPaths = {}
-				intialDevices.forEach(function(device){
-					initialPaths[device.path] = true;
-				});
-				var countAndScheduleCheck = function() {
-					count++;
-					if(count == 20){
-						var rejectMessage = {
-							file: 'HexUploader',
-							step: 'waitForNewDeviceToAppear',
-							message: 'Device never appeared.',
-							payload: ''
-						}
-						console.error(rejectMessage)
-
-						reject(rejectMessage)
-					}
-					else{
-						setTimeout(check, 150);
-					}
-				}
-				var check = function(){
-					SerialApi.getDevices()
-					.then(filterDevicesByUSBDescriptors)
-					.then(function(devices){
-						console.log('hex', count, devices)
-						for (var i = 0; i < devices.length; i++) {
-							if(!initialPaths[devices[i].path]){
-
-								link.device.originalPath = link.device.path;
-								link.device.path = devices[i].path;
-								console.log('HEX-UPLOADER: New device appeared:', link.device.path)
-								resolve(link)
-								return;
-							}
-						}
-						countAndScheduleCheck();
-
-					})
-					.catch(countAndScheduleCheck);
-				}
-				check();
-			});
-
-		}
-		return new Promise(promise);
-	}
-*/
 	var waitForNewDeviceToAppear = function(link){
 		var promise = function(resolve, reject){
 			SerialApi.getDevices()
 			.then(filterDevicesByUSBDescriptors)
+			.then(filterMacTty)
 			.then(function(intialDevices){
 				var count = 0;
 				var countAndScheduleCheck = function() {
@@ -473,8 +370,8 @@ var HexUploader = function(){
 				var check = function(){
 					SerialApi.getDevices()
 					.then(filterDevicesByUSBDescriptors)
+					.then(filterMacTty)
 					.then(function(devices){
-						console.log('hex', count, JSON.stringify(devices))
 						if(devices.length < intialDevices.length){
 							var disappeared = objectArrayDiffByKey(intialDevices, devices, 'path');
 							if(disappeared.length){
@@ -902,6 +799,33 @@ var HexUploader = function(){
 				}
 				return false;
 			});
+			resolve(devices)
+		}
+		return new Promise(promise);
+	}
+	var filterMacTty = function(devices){
+		var promise = function(resolve, reject){
+			var compoundDevices = {};
+			devices.forEach(function(device, index){
+				var parts = device.path.split('.');
+				var name = parts[parts.length - 1];
+				if(!compoundDevices[name]){
+					compoundDevices[name] =  {};
+				};
+				var compound = compoundDevices[name];
+				if(device.path.indexOf('tty.') !== -1){
+					compound.tty = device;
+				}
+				else if(device.path.indexOf('cu.') !== -1){
+					compound.cu = device;
+				}
+			});
+			Object.keys(compoundDevices).forEach(function(name) {
+				var compound = compoundDevices[name];
+				if(typeof compound.tty !== 'undefined' && typeof compound.cu !== 'undefined'){
+					devices.splice(devices.indexOf(compound.tty), 1);
+				}
+			})
 			resolve(devices)
 		}
 		return new Promise(promise);

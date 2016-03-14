@@ -222,7 +222,6 @@ var QuirkbotChromeExtension = function(){
 				var uuidBuffer = [];
 				var uuid;
 				if(link.buffer.indexOf(UUID_DELIMITER) !== -1){
-
 					safeWhile(
 						function () {
 							return link.buffer[0] !== UUID_DELIMITER;
@@ -236,6 +235,7 @@ var QuirkbotChromeExtension = function(){
 					);
 
 				}
+
 				if(uuidBuffer.length && uuidBuffer.length != QB_UUID_SIZE){
 					// It's ok to not have any UUID (uuidBuffer.length == 0)
 					// But it's not ok if size is different (uuidBuffer.length != QB_UUID_SIZE)
@@ -243,6 +243,7 @@ var QuirkbotChromeExtension = function(){
 					link.buffer = [];
 					continue;
 				}
+
 				link.buffer.splice(0,1);
 				if(uuidBuffer.length){
 					uuid = String.fromCharCode.apply(null,uuidBuffer);
@@ -315,14 +316,17 @@ var QuirkbotChromeExtension = function(){
 
 				// If we got here, we got a complete message!
 
-				if(uuid) {
-					// If the uuid is simply a sequence of Zeros, we consider it invalid.
-					var invalidUuid = 0;
+				if(uuid && uuid.length == QB_UUID_SIZE) {
+					// Validate the uuid - values lower than 0x30 are ignored
+ 					var uuidBackup = link.quirkbot.uuid;
+					link.quirkbot.uuid = "";
 					for (var i = 0; i < uuid.length; i++) {
-						invalidUuid += uuid[i];
-					}
-					if(!invalidUuid){
-						link.quirkbot.uuid = uuid;
+						if(uuid.charCodeAt(i) >= 0x30){
+							link.quirkbot.uuid += uuid[i];
+						}
+						else{
+							link.quirkbot.uuid += uuidBackup[i];
+						}
 					}
 
 				}
@@ -694,7 +698,7 @@ var QuirkbotChromeExtension = function(){
 				var notOnStack = connections.filter(function (connection) {
 					var exists = false;
 					linkStash.forEach(function(link) {
-						if(link.connection.connectionId == connection.connectionId){
+						if(link.connection && link.connection.connectionId == connection.connectionId){
 							exists = true;
 						}
 					})
@@ -966,10 +970,10 @@ var QuirkbotChromeExtension = function(){
 			devices = devices.filter(function(device){
 				for (var i = 0; i < linkStash.length; i++) {
 					var link = linkStash[i];
-
-					if(link.device.path == device.path || link.device.path == device.originalPath ){
+					if(link.device.path == device.path || link.device.originalPath == device.path ){
 						return false;
 					}
+					console.log('aaaa', link, device)
 				}
 
 				return true;
@@ -1029,7 +1033,7 @@ var QuirkbotChromeExtension = function(){
 						quirkbot : {
 							interface: 'serial',
 							connectedAt: Date.now(),
-							uuid: 'TEMP' + Math.random().toFixed(12).substr(2),
+							uuid: '****TEMP' + Math.random().toFixed(8).substr(2),
 							nodes : [],
 							upload: {}
 						}
