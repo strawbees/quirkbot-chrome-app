@@ -173,7 +173,7 @@ var HexUploader = function(){
 				return Promise.all(connections.map(function (connection) {
 					return new Promise(function(resolve, reject){
 						run()
-						.then(log('HEX-UPLOADER: Desconnecting: using SerialApi...', true))
+						.then(log('HEX-UPLOADER: Desconnecting port ' + connection.name, true))
 						.then(function(){
 							return SerialApi.disconnect(connection.connectionId);
 						})
@@ -372,6 +372,7 @@ var HexUploader = function(){
 					.then(filterDevicesByUSBDescriptors)
 					.then(filterMacTty)
 					.then(function(devices){
+						console.log('HEX-UPLOADER: Waiting devices...', count, devices);
 						if(devices.length < intialDevices.length){
 							var disappeared = objectArrayDiffByKey(intialDevices, devices, 'path');
 							if(disappeared.length){
@@ -397,13 +398,21 @@ var HexUploader = function(){
 					.catch(countAndScheduleCheck);
 				}
 				check();
-			});
+			})
+			.catch(function() {
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'waitForNewDeviceToAppear',
+					message: 'Error getting list of devices.',
+					payload: arguments
+				}
+				console.error(rejectMessage);
+				reject(rejectMessage);
+			})
 
 		}
 		return new Promise(promise);
 	}
-
-
 	var enterBootaloderModeAndWriteData = function(link, hexString){
 		var promise = function(resolve, reject){
 			run(link)
@@ -429,6 +438,7 @@ var HexUploader = function(){
 	var guaranteeEnterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
 			run(link)
+			.then(forceDisconnect)
 			.then(log('HEX-UPLOADER: Making sure the connection is open.', true))
 			.then(ensureOpenConnection(openUploadConnection))
 			.then(log('HEX-UPLOADER: Checking for software identifier "QUIRKBO" (confirms Quirkbot bootloader).', true))

@@ -600,12 +600,19 @@ var QuirkbotChromeExtension = function(){
 			SerialApi.getConnections()
 			.then(function(connections) {
 				return Promise.all(connections.map(function (connection) {
-					SerialApi.getControlSignals(connection.connectionId)
-					.then(function() {
-						resolve();
-					})
-					.catch(function() {
-						resolve(connection);
+					return new Promise(function(resolve, reject) {
+						// Resolve early if the connection has not bitrate
+						if(!connection.bitrate){
+							resolve(connection);
+							return;
+						}
+						SerialApi.getControlSignals(connection.connectionId)
+						.then(function() {
+							resolve();
+						})
+						.catch(function() {
+							resolve(connection);
+						})
 					})
 				}));
 			})
