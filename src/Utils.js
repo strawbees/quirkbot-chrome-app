@@ -24,17 +24,18 @@ var run = function(){
  * reject payload of the process, and  returns a promise that rejects if it
  * should reject early, or resolves if it should continue trying.
  */
-var tryToExecute = function(process, maxTries, interval, earlyRejectFilter){
+var tryToExecute = function(label, process, maxTries, interval, earlyRejectFilter){
 	maxTries = maxTries || 1;
 	interval = interval || 1000;
 	earlyRejectFilter = earlyRejectFilter || run;
+	label = label || 'Try to execute';
 	return function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
 			var count = 0;
 			var recursiveTry = function(){
 				run.apply(null, arguments)
-				.then(log('Trying to execute:' + count + '/' + maxTries, true))
+				.then(log(label + ': trial (' + (count+1) + '/' + maxTries + ')', true))
 				.then(process)
 				.then(resolve)
 				.catch(function(){

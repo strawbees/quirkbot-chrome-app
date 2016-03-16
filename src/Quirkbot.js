@@ -556,8 +556,8 @@ var QuirkbotChromeExtension = function(){
 			.then(log('MONITOR: fetchDevices'))
 			.then(filterDevicesByUSBDescriptors)
 			.then(log('MONITOR: filterDevicesByUSBDescriptors'))
-			.then(filterMacTty)
-			.then(log('MONITOR: filterMacTty'))
+			.then(filterDevicesDoublePortsOnMac)
+			.then(log('MONITOR: filterDevicesDoublePortsOnMac'))
 			//.then(filterDevicesWithTooManyFailedAttempts)
 			//.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
@@ -945,7 +945,7 @@ var QuirkbotChromeExtension = function(){
 
 		return new Promise(promise);
 	}
-	var filterMacTty = function(devices){
+	var filterDevicesDoublePortsOnMac = function(devices){
 		var promise = function(resolve, reject){
 			var compoundDevices = {};
 			devices.forEach(function(device, index){

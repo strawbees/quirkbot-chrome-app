@@ -14,6 +14,7 @@ var HexUploader = function(){
 		PAGE_SIZE: 128,
 		PROGRAM_ADDRESS: 0,
 		SYNC: 27,
+		ENTER_BOOTLOADER: 0xb,
 		SOFTWARE_IDENTIFIER: 0x53, // S
 		ENTER_PROGRAM_MODE: 0x50, // P
 		LEAVE_PROGRAM_MODE: 0x4c, // L
@@ -38,9 +39,9 @@ var HexUploader = function(){
 			.then(log('HEX-UPLOADER: Started upload process', true))
 			.then(addHexDataToLink(hexString))
 			.then(log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
-			.then(tryToExecute(enterBootaloderModeAndWriteData, 2, 1000))
+			.then(tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteData', enterBootaloderModeAndWriteData, 2,100))
 			.then(log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
-			.then(tryToExecute(exitBootaloderModeAndRestablishCommunication, 1))
+			.then(tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
 			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
 			.then(removeHexDataFromLink)
 			.then(resolve)
@@ -352,7 +353,7 @@ var HexUploader = function(){
 				var count = 0;
 				var countAndScheduleCheck = function() {
 					count++;
-					if(count == 50){
+					if(count == 20){
 						var rejectMessage = {
 							file: 'HexUploader',
 							step: 'waitForNewDeviceToAppear',
@@ -364,7 +365,7 @@ var HexUploader = function(){
 						reject(rejectMessage)
 					}
 					else{
-						setTimeout(check, 150);
+						setTimeout(check, 200);
 					}
 				}
 				var check = function(){
@@ -417,9 +418,9 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			run(link)
 			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
-			.then(tryToExecute(guaranteeEnterBootaloderMode, 2, 100))
+			.then(tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderMode', guaranteeEnterBootaloderMode, 2, 100))
 			.then(log('HEX-UPLOADER: Trying to writeData...', true))
-			.then(tryToExecute(writeData, 3, 600))
+			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 3, 600))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -449,9 +450,9 @@ var HexUploader = function(){
 				run(link)
 				.then(log('HEX-UPLOADER: Quirkbot is NOT on bootloader mode.', true))
 				.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
-				.then(tryToExecute(enterBootaloderMode, 10, 60))
+				.then(enterBootaloderMode)
 				.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-				.then(tryToExecute(openUploadConnection, 4, 500))
+				.then(tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
 				.then(log('HEX-UPLOADER: Checking for software identifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
 				.then(checkSoftware('QUIRKBO'))
 				.then(log('HEX-UPLOADER: Bootloader confirmed!', true))
@@ -660,11 +661,11 @@ var HexUploader = function(){
 		var promise = function(resolve, reject){
 			run(link)
 			.then(log('HEX-UPLOADER: Trying to issue command to exit bootloader...', true))
-			.then(tryToExecute(exitBootlader, 10, 200))
+			.then(tryToExecute('HEX-UPLOADER: exitBootlader', exitBootlader, 5, 200))
 			.then(log('HEX-UPLOADER: Wait device refresh.', true))
-			.then(tryToExecute(hopefullyWaitForDeviceRefresh, 1))
+			.then(tryToExecute('HEX-UPLOADER: hopefullyWaitForDeviceRefresh', hopefullyWaitForDeviceRefresh, 1))
 			.then(log('HEX-UPLOADER: Trying to open the communication connection...', true))
-			.then(tryToExecute(openCommunicationConnection, 10, 200))
+			.then(tryToExecute('HEX-UPLOADER: openCommunicationConnection', openCommunicationConnection, 5, 200))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {

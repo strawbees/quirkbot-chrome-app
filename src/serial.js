@@ -1,8 +1,58 @@
 // API -------------------------------------------------------------------------
 var SerialApi = {};
-// METHODS
+
+
+/** Queue Call
+ *  This contraption allows you to make sure you will never make more tha one
+ *  call to the chrome.serial api at the same time (decided to do this after
+ *  observing really weird bugs on Chromebook).
+ */
+SerialApi._callQueue = [];
+SerialApi._callQueueIdFactory = 0;
+SerialApi._queueCallBusy = false;
+SerialApi._tickCallQueue = function() {
+	if(SerialApi._queueCallBusy || !SerialApi._callQueue.length){
+		return;
+	}
+	SerialApi._queueCallBusy = true;
+	var call = SerialApi._callQueue[0];
+
+	call.fn()
+	// Call always resolves (no need for catch)
+	.then(function() {
+		SerialApi._queueCallBusy = false;
+		SerialApi._callQueue.shift();
+		SerialApi._tickCallQueue();
+	});
+}
+SerialApi._queueCall = function(call) {
+	return new Promise(function(resolve, reject){
+		SerialApi._callQueue.push(
+			{
+				id: SerialApi._callQueueIdFactory++,
+				fn: function() {
+					return new Promise(function(alwaysResolve) {
+						new Promise(call)
+						.then(function() {
+							resolve.apply(this, arguments);
+							alwaysResolve();
+						})
+						.catch(function() {
+							reject.apply(this, arguments);
+							alwaysResolve();
+						})
+					});
+				}
+			}
+		);
+		SerialApi._tickCallQueue();
+	});
+}
+
+
+// METHODS ---------------------------------------------------------------------
 SerialApi.getDevices = function(){
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -28,11 +78,10 @@ SerialApi.getDevices = function(){
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.connect = function (path, options) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -62,11 +111,10 @@ SerialApi.connect = function (path, options) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.update = function (connectionId, options) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -94,11 +142,10 @@ SerialApi.update = function (connectionId, options) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.disconnect = function (connectionId) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -125,11 +172,10 @@ SerialApi.disconnect = function (connectionId) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.setPaused = function (connectionId, paused) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -157,11 +203,10 @@ SerialApi.setPaused = function (connectionId, paused) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.getInfo = function (connectionId) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -188,11 +233,10 @@ SerialApi.getInfo = function (connectionId) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.getConnections = function () {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -218,11 +262,10 @@ SerialApi.getConnections = function () {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.send = function (connectionId, data) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -250,11 +293,10 @@ SerialApi.send = function (connectionId, data) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.flush = function (connectionId) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -281,11 +323,10 @@ SerialApi.flush = function (connectionId) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.getControlSignals = function (connectionId) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -312,11 +353,10 @@ SerialApi.getControlSignals = function (connectionId) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 SerialApi.setControlSignals = function (connectionId) {
-	var promise = function(resolve, reject){
+	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
 			reject({
 				file: 'Serial',
@@ -343,8 +383,7 @@ SerialApi.setControlSignals = function (connectionId) {
 				message: e.toString()
 			});
 		};
-	};
-	return new Promise(promise);
+	});
 }
 // LISTENERS
 SerialApi.onReceiveListeners = [];
