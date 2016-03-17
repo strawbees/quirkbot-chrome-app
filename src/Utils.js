@@ -135,3 +135,66 @@ var safeWhile = function(conditionFn, loopFn, errorFn){
 		loopFn(breakFn);
 	}
 }
+
+var compareArrays = function(a,b){
+	if(a.length != b.length) return false;
+
+	for (var i = 0; i < a.length; i++) {
+		if(a[i] != b[i])
+			return false;
+	};
+
+	return true;
+}
+var binToHex = function(bin) {
+	var bufferView = new Uint8Array(bin);
+	var hexes = [];
+	for (var i = 0; i < bufferView.length; ++i) {
+		hexes.push(bufferView[i]);
+	}
+	return hexes;
+}
+var hexToBin = function(hex) {
+	var buffer = new ArrayBuffer(hex.length);
+	var bufferView = new Uint8Array(buffer);
+	for (var i = 0; i < hex.length; i++) {
+		bufferView[i] = hex[i];
+	}
+	return buffer;
+}
+var storeAsTwoBytes = function(n) {
+	var lo = (n & 0x00FF);
+	var hi = (n & 0xFF00) >> 8;
+	return [hi, lo];
+}
+var pad = function(data, pageSize) {
+	safeWhile(
+		function () {
+			return data.length % pageSize != 0;
+		},
+		function () {
+			data.push(0);
+		}
+	);
+
+	return data;
+}
+var objectArrayDiffByKey = function(A, B, key) {
+	var map = {}, C = [];
+
+	for(var i = B.length; i--; )
+		map[B[i][key]] = true;
+
+	for(var i = A.length; i--; ) {
+	if(!map.hasOwnProperty(A[i][key]))
+		C.push(A[i]);
+	}
+
+	return C;
+}
+
+var mapProperty = function(array, property) {
+	return array.map(function(item) {
+		return item[property];
+	})
+}
