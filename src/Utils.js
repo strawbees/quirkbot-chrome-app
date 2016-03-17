@@ -24,17 +24,18 @@ var run = function(){
  * reject payload of the process, and  returns a promise that rejects if it
  * should reject early, or resolves if it should continue trying.
  */
-var tryToExecute = function(process, maxTries, interval, earlyRejectFilter){
+var tryToExecute = function(label, process, maxTries, interval, earlyRejectFilter){
 	maxTries = maxTries || 1;
 	interval = interval || 1000;
 	earlyRejectFilter = earlyRejectFilter || run;
+	label = label || 'Try to execute';
 	return function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
 			var count = 0;
 			var recursiveTry = function(){
 				run.apply(null, arguments)
-				.then(log('Trying to execute:' + count + '/' + maxTries, true))
+				.then(log(label + ': trial (' + (count+1) + '/' + maxTries + ')', true))
 				.then(process)
 				.then(resolve)
 				.catch(function(){
@@ -108,4 +109,92 @@ var delay = function(millis){
 		}
 		return new Promise(promise);
 	}
+}
+
+
+var safeWhile = function(conditionFn, loopFn, errorFn){
+	var start =  Date.now();
+	var forceBreak = false;
+	var breakFn = function(){
+		forceBreak = true;
+	}
+	if(typeof loopFn !== 'function'){
+		console.error('safeWhile: 2nd argument is not a function!');
+	}
+	while(conditionFn()){
+		if((Date.now() - start) > 2000){
+			console.error('safeWhile: loop ' + id + ' is stuck!');
+			if(typeof errorFn === 'function'){
+				errorFn();
+			}
+			break;
+		}
+		else if(forceBreak){
+			break;
+		}
+		loopFn(breakFn);
+	}
+}
+
+var compareArrays = function(a,b){
+	if(a.length != b.length) return false;
+
+	for (var i = 0; i < a.length; i++) {
+		if(a[i] != b[i])
+			return false;
+	};
+
+	return true;
+}
+var binToHex = function(bin) {
+	var bufferView = new Uint8Array(bin);
+	var hexes = [];
+	for (var i = 0; i < bufferView.length; ++i) {
+		hexes.push(bufferView[i]);
+	}
+	return hexes;
+}
+var hexToBin = function(hex) {
+	var buffer = new ArrayBuffer(hex.length);
+	var bufferView = new Uint8Array(buffer);
+	for (var i = 0; i < hex.length; i++) {
+		bufferView[i] = hex[i];
+	}
+	return buffer;
+}
+var storeAsTwoBytes = function(n) {
+	var lo = (n & 0x00FF);
+	var hi = (n & 0xFF00) >> 8;
+	return [hi, lo];
+}
+var pad = function(data, pageSize) {
+	safeWhile(
+		function () {
+			return data.length % pageSize != 0;
+		},
+		function () {
+			data.push(0);
+		}
+	);
+
+	return data;
+}
+var objectArrayDiffByKey = function(A, B, key) {
+	var map = {}, C = [];
+
+	for(var i = B.length; i--; )
+		map[B[i][key]] = true;
+
+	for(var i = A.length; i--; ) {
+	if(!map.hasOwnProperty(A[i][key]))
+		C.push(A[i]);
+	}
+
+	return C;
+}
+
+var mapProperty = function(array, property) {
+	return array.map(function(item) {
+		return item[property];
+	})
 }
