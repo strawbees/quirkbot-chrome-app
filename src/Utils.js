@@ -123,7 +123,7 @@ var safeWhile = function(conditionFn, loopFn, errorFn){
 	}
 	while(conditionFn()){
 		if((Date.now() - start) > 2000){
-			console.error('safeWhile: loop ' + id + ' is stuck!');
+			console.error('safeWhile: loop is stuck!');
 			if(typeof errorFn === 'function'){
 				errorFn();
 			}
