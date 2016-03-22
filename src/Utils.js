@@ -112,8 +112,9 @@ var delay = function(millis){
 }
 
 
-var safeWhile = function(conditionFn, loopFn, errorFn){
-	var start =  Date.now();
+var safeWhile = function(conditionFn, loopFn, errorFn, maxIterations){
+	maxIterations = maxIterations || 500;
+	var count =  0;
 	var forceBreak = false;
 	var breakFn = function(){
 		forceBreak = true;
@@ -122,7 +123,8 @@ var safeWhile = function(conditionFn, loopFn, errorFn){
 		console.error('safeWhile: 2nd argument is not a function!');
 	}
 	while(conditionFn()){
-		if((Date.now() - start) > 2000){
+		count++;
+		if(count > maxIterations){
 			console.error('safeWhile: loop is stuck!');
 			if(typeof errorFn === 'function'){
 				errorFn();
