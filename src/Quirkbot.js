@@ -220,12 +220,11 @@ var QuirkbotChromeExtension = function(){
 		if(!link)	return;
 
 		// do nothing if there is a upload going on
-
-
 		if(link.quirkbot.upload.pending) return;
 
 		var buffer = new Uint8Array(message.data);
-		for (var i = 0; i < buffer.length; ++i) {
+
+		for (var i = 0; i < buffer.length; i++) {
 
 			// Start recording the buffer if REPORT_START_DELIMITER is found
 			if(!link.bufferOpen && buffer[i] !== REPORT_START_DELIMITER)
@@ -234,8 +233,11 @@ var QuirkbotChromeExtension = function(){
 			link.bufferOpen = true;
 
 
-			if(buffer[i] === REPORT_START_DELIMITER)
+			if(buffer[i] === REPORT_START_DELIMITER){
+				link.buffer = [];
 				continue;
+			}
+
 			// Stop recording if END_DELIMITER delmiter is found
 			if(buffer[i] === END_DELIMITER){
 				link.bufferOpen = false;
@@ -261,7 +263,7 @@ var QuirkbotChromeExtension = function(){
 				if(uuidBuffer.length && uuidBuffer.length != QB_UUID_SIZE){
 					// It's ok to not have any UUID (uuidBuffer.length == 0)
 					// But it's not ok if size is different (uuidBuffer.length != QB_UUID_SIZE)
-					//console.log('invalid! UUID');
+					console.log('invalid! UUID');
 					link.buffer = [];
 					continue;
 				}
@@ -289,7 +291,7 @@ var QuirkbotChromeExtension = function(){
 				}
 				if(nodesNumBuffer.length != 1){
 					// message is invalid!
-					//console.log('invalid! NUM NODES')
+					console.log('invalid! NUM NODES')
 					link.buffer = [];
 					continue;
 				}
@@ -329,7 +331,7 @@ var QuirkbotChromeExtension = function(){
 
 				if(nodes.length != nodesNum){
 					// message is invalid!
-					//console.log('invalid! NODE CONTENT')
+					console.log('invalid! NODE CONTENT')
 					link.buffer = [];
 					continue;
 				}
@@ -342,12 +344,12 @@ var QuirkbotChromeExtension = function(){
 					// Validate the uuid - values lower than 0x30 are ignored
  					var uuidBackup = link.quirkbot.uuid;
 					link.quirkbot.uuid = "";
-					for (var i = 0; i < uuid.length; i++) {
-						if(uuid.charCodeAt(i) >= 0x30){
-							link.quirkbot.uuid += uuid[i];
+					for (var j = 0; j < uuid.length; j++) {
+						if(uuid.charCodeAt(j) >= 0x30){
+							link.quirkbot.uuid += uuid[j];
 						}
 						else{
-							link.quirkbot.uuid += uuidBackup[i];
+							link.quirkbot.uuid += uuidBackup[j];
 						}
 					}
 
@@ -359,6 +361,8 @@ var QuirkbotChromeExtension = function(){
 
 			link.buffer.push(buffer[i]);
 		}
+
+		delete link.parsingBuffer;
 	}
 	// Model -------------------------------------------------------------------
 	var getModel = function(){
