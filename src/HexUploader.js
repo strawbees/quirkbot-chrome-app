@@ -399,8 +399,8 @@ var HexUploader = function(){
 								if(appeared.length){
 									appeared = appeared[0];
 									console.log('HEX-UPLOADER: A device appeared:', appeared);
+									link.device = appeared;
 									link.device.originalPath = link.device.path;
-									link.device.path = appeared.path;
 									resolve(link);
 									return;
 								}
@@ -432,7 +432,7 @@ var HexUploader = function(){
 			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
 			.then(tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderMode', guaranteeEnterBootaloderMode, 1, 100))
 			.then(log('HEX-UPLOADER: Trying to writeData...', true))
-			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 5, 10))
+			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -454,9 +454,9 @@ var HexUploader = function(){
 			.then(forceDisconnect)
 			.then(log('HEX-UPLOADER: Making sure the connection is open.', true))
 			.then(ensureOpenConnection(openUploadConnection))
-			.then(log('HEX-UPLOADER: Checking for software identifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
-			.then(checkSoftware('QUIRKBO'))
-			.then(log('HEX-UPLOADER: Bootloader confirmed!', true))
+			.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+			.then(verifyBootloaderMode)
+			.then(log('HEX-UPLOADER: Bootloader verified!', true))
 			.then(resolve)
 			.catch(function(){
 				run(link)
@@ -465,9 +465,9 @@ var HexUploader = function(){
 				.then(tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
 				.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
 				.then(tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
-				.then(log('HEX-UPLOADER: Checking for software identifier "QUIRKBO" (confirms Quirkbot bootloader).', true))
-				.then(checkSoftware('QUIRKBO'))
-				.then(log('HEX-UPLOADER: Bootloader confirmed!', true))
+				.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+				.then(verifyBootloaderMode)
+				.then(log('HEX-UPLOADER: Bootloader verified!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
@@ -479,6 +479,45 @@ var HexUploader = function(){
 					console.error(rejectMessage)
 					reject(rejectMessage)
 				});
+			});
+		}
+		return new Promise(promise);
+	}
+	var verifyBootloaderMode = function(link){
+		var promise = function(resolve, reject){
+			run(link)
+			.then(log('HEX-UPLOADER: Verifying bootloader by usb descriptors', true))
+			.then(function(link){
+				if(!link || !link.device || !link.device.productId){
+					throw new Error('Product id not avaiable');
+				}
+				switch (link.device.productId) {
+					case 0xF005:
+					case 0xF006:
+						return link;
+					default:
+						throw new Error('Product id does not match official ids');
+				}
+			})
+			.then(log('HEX-UPLOADER: Verified by usb descriptors!', true))
+			.then(resolve)
+			.catch(function(){
+					run(link)
+					.then(log('HEX-UPLOADER: Descriptors verification failed!', true))
+					.then(log('HEX-UPLOADER: Verifying bootloader by identifier "QUIRKBO"', true))
+					.then(checkSoftware('QUIRKBO'))
+					.then(log('HEX-UPLOADER: Verified by identifier!', true))
+					.then(resolve)
+					.catch(function(){
+						var rejectMessage = {
+							file: 'HexUploader',
+							step: 'verifyBootloaderMode',
+							message: 'Could not verify bootloader mode.',
+							payload: arguments
+						}
+						console.error(rejectMessage)
+						reject(rejectMessage)
+					});
 			});
 		}
 		return new Promise(promise);
@@ -909,6 +948,9 @@ var HexUploader = function(){
 	});
 	Object.defineProperty(self, 'checkSoftware', {
 		value: checkSoftware
+	});
+	Object.defineProperty(self, 'verifyBootloaderMode', {
+		value: verifyBootloaderMode
 	});
 
 }

@@ -928,6 +928,9 @@ var QuirkbotChromeExtension = function(){
 				if(device.productId && device.productId === 0xF005){
 					return true;
 				}
+				if(device.productId && device.productId === 0xF006){
+					return true;
+				}
 				if(device.vendorId && device.vendorId === 0x2886){
 					return true;
 				}
@@ -1135,7 +1138,7 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			var hexUploader = new HexUploader();
 			run(link)
-			.then(hexUploader.checkSoftware('QUIRKBO'))
+			.then(hexUploader.verifyBootloaderMode)
 			.then(function(link) {
 				link.quirkbot.bootloader = true;
 				resolve(link)
