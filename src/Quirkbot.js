@@ -355,6 +355,7 @@ var QuirkbotChromeExtension = function(){
 
 				}
 				link.quirkbot.nodes = nodes;
+				link.quirkbot.updatedAt = Date.now();
 
 				continue;
 			}
