@@ -45,23 +45,44 @@ var HexUploader = function(){
 			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
 			.then(removeHexDataFromLink)
 			.then(resolve)
-			.catch(function(){
-
-				var rejectMessage = {
-					file: 'HexUploader',
-					step: 'uploadHex',
-					message: 'Upload failed',
-					payload: arguments
-				}
-				console.error(rejectMessage)
+			.catch(function(error){
+				// As the first batch of Quirkbots had the same product id for
+				// both the program and the bootloader, we do a check here to
+				// verify if the upload failed because of that. If it did, we
+				// try to re-upload with a slitly different process, that will
+				// not assume the board is on bootloader mode.
 				run(link)
+				.then(log('HEX-UPLOADER: Verifying if upload failed because of an old Quirkbot...', true))
+				.then(verifyOldQuirkbotError(error))
+				.then(log('HEX-UPLOADER: Confirmed that upload failed because of an old Quirkbot!', true))
+				.then(log('HEX-UPLOADER: Starting upload process again...', true))
+				.then(addHexDataToLink(hexString))
+				.then(log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
+				.then(tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteDataWithoutInitialVerification', enterBootaloderModeAndWriteDataWithoutInitialVerification, 2,100))
+				.then(log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
+				.then(tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
+				.then(log('HEX-UPLOADER: Upload Process Completed!', true))
 				.then(removeHexDataFromLink)
-				.then(function () {
-					reject(rejectMessage)
-				})
-				.catch(function () {
-					reject(rejectMessage)
+				.then(resolve)
+				.catch(function(){
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'uploadHex',
+						message: 'Upload failed',
+						payload: arguments
+					}
+					console.error(rejectMessage);
+
+					run(link)
+					.then(removeHexDataFromLink)
+					.then(function () {
+						reject(rejectMessage)
+					})
+					.catch(function () {
+						reject(rejectMessage)
+					});
 				});
+
 			});
 
 		}
@@ -264,10 +285,10 @@ var HexUploader = function(){
 							file: 'HexUploader',
 							step: 'waitForResponse',
 							message: 'Response did not match.',
-							payload: {
+							payload: [{
 								char: [buffer, response],
 								string: [bufferAsNormalArray.map(String.fromCharCode), response.map(String.fromCharCode)]
-							}
+							}]
 						}
 						console.error(rejectMessage)
 						reject(rejectMessage);
@@ -448,6 +469,28 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
+	var enterBootaloderModeAndWriteDataWithoutInitialVerification = function(link, hexString){
+		var promise = function(resolve, reject){
+			run(link)
+			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
+			.then(tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderModeWithoutInitialVerification', guaranteeEnterBootaloderModeWithoutInitialVerification, 1, 100))
+			.then(log('HEX-UPLOADER: Trying to writeData...', true))
+			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'enterBootaloderModeAndWriteDataWithoutInitialVerification',
+					message: 'Failed to enter bootloader and write data',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+
+		}
+		return new Promise(promise);
+	}
 	var guaranteeEnterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
 			run(link)
@@ -483,6 +526,30 @@ var HexUploader = function(){
 		}
 		return new Promise(promise);
 	}
+	var guaranteeEnterBootaloderModeWithoutInitialVerification = function(link){
+		var promise = function(resolve, reject){
+			run(link)
+			.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
+			.then(tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
+			.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
+			.then(tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
+			.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+			.then(verifyBootloaderMode)
+			.then(log('HEX-UPLOADER: Bootloader verified!', true))
+			.then(resolve)
+			.catch(function(){
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'guaranteeEnterBootaloderModeWithoutInitialVerification',
+					message: 'Could not guarantee bootloader mode (without initial verification).',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+			});
+		}
+		return new Promise(promise);
+	}
 	var verifyBootloaderMode = function(link){
 		var promise = function(resolve, reject){
 			run(link)
@@ -492,8 +559,8 @@ var HexUploader = function(){
 					throw new Error('Product id not avaiable');
 				}
 				switch (link.device.productId) {
-					case 0xF005:
 					case 0xF006:
+					case 0xF005:
 						return link;
 					default:
 						throw new Error('Product id does not match official ids');
@@ -502,22 +569,30 @@ var HexUploader = function(){
 			.then(log('HEX-UPLOADER: Verified by usb descriptors!', true))
 			.then(resolve)
 			.catch(function(){
-					run(link)
-					.then(log('HEX-UPLOADER: Descriptors verification failed!', true))
-					.then(log('HEX-UPLOADER: Verifying bootloader by identifier "QUIRKBO"', true))
-					.then(checkSoftware('QUIRKBO'))
-					.then(log('HEX-UPLOADER: Verified by identifier!', true))
-					.then(resolve)
-					.catch(function(){
-						var rejectMessage = {
-							file: 'HexUploader',
-							step: 'verifyBootloaderMode',
-							message: 'Could not verify bootloader mode.',
-							payload: arguments
-						}
-						console.error(rejectMessage)
-						reject(rejectMessage)
-					});
+				var rejectMessage = {
+					file: 'HexUploader',
+					step: 'verifyBootloaderMode',
+					message: 'Could not verify bootloader mode.',
+					payload: arguments
+				}
+				console.error(rejectMessage)
+				reject(rejectMessage)
+				/*run(link)
+				.then(log('HEX-UPLOADER: Descriptors verification failed!', true))
+				.then(log('HEX-UPLOADER: Verifying bootloader by identifier "QUIRKBO"', true))
+				.then(checkSoftware('QUIRKBO'))
+				.then(log('HEX-UPLOADER: Verified by identifier!', true))
+				.then(resolve)
+				.catch(function(){
+					var rejectMessage = {
+						file: 'HexUploader',
+						step: 'verifyBootloaderMode',
+						message: 'Could not verify bootloader mode.',
+						payload: arguments
+					}
+					console.error(rejectMessage)
+					reject(rejectMessage)
+				});*/
 			});
 		}
 		return new Promise(promise);
@@ -893,6 +968,9 @@ var HexUploader = function(){
 				if(device.productId && device.productId === 0xF005){
 					return true;
 				}
+				if(device.productId && device.productId === 0xF006){
+					return true;
+				}
 				if(device.vendorId && device.vendorId === 0x2886){
 					return true;
 				}
@@ -939,6 +1017,44 @@ var HexUploader = function(){
 			}
 			resolve();
 		});
+	}
+	var verifyOldQuirkbotError = function (error) {
+		return function (link) {
+			var promise = function(resolve, reject){
+				if(link && link.device && link.device.productId != 0xF005){
+					reject('Product id is not 0xF005.')
+				}
+				var chain = getErrorStepChain(error);
+				if(chain.length < 3){
+					console.log(chain)
+					reject('Error chain is shorter than 3 steps.');
+				}
+				if(chain.pop() === 'waitForResponse'
+					&& chain.pop() === 'writeAndGetResponse'
+					&& chain.pop() === 'enterProgramMode'){
+					resolve(link);
+				}
+				reject('Error chain does not end in "enterProgramMode", "writeAndGetResponse", "waitForResponse".');
+			}
+			return new Promise(promise);
+		}
+
+	}
+	var getErrorStepChain = function (error, chain) {
+		chain = chain || [];
+		if(error && error.step){
+			chain.push(error.step);
+		}
+		if(error.payload && error.payload.length){
+			return getErrorStepChain(error.payload[0], chain);
+		}
+		return chain;
+	}
+	var getDeepestErrorPayload = function (error) {
+		if(error.payload && error.payload.length){
+			return getDeepestErrorPayload(error.payload[0]);
+		}
+		return error;
 	}
 	// -------------------------------------------------------------------------
 	// External API ------------------------------------------------------------
