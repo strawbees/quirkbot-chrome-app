@@ -50,3 +50,10 @@ npm publish
 - Create a git tag.
 - Make a manual [Github release](https://github.com/Quirkbot/QuirkbotArduinoLibrary/releases) and upload the generated _quirkbot-arduino-library-*.zip_.
 - Upload _quirkbot-arduino-library-*.zip_ manually to the Chrome Webstore
+
+## Publishing to NPM registry
+**Do not call `npm publish` directly!** Use instead:
+```
+npm run custom_publish
+```
+It will call `npm shrinkwrap` and build the distributions in all the environments before publishing it to NPM.
