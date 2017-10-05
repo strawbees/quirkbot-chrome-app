@@ -1,6 +1,6 @@
 {
      "name": "quirkbot-chrome-app",
-     "version": "0.2.6",
+     "version": "0.2.7",
      "description": "Quirkbot Chrome App",
      "author": "Paulo Barcelos <paulo@quirkbot.com>",
      "homepage": "https://github.com/Quirkbot/QuirkbotChromeApp",
@@ -17,6 +17,8 @@
      "scripts": {
           "gulp": "node ./node_modules/gulp/bin/gulp.js",
           "gulp:xunit": "npm run gulp -- --reporter xunit",
-          "deploy:npm": "npm run shrinkwrap && npm run gulp -- build && npm publish"
+          "deploy:npm": "npm run gulp -- build && npm publish",
+          "deploy:stage" : "npm run gulp -- deploy --environment=stage",
+          "deploy:production" : "npm run gulp -- deploy --environment=production"
      }
 }
