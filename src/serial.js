@@ -88,7 +88,7 @@ SerialApi.connect = function (path, options) {
 				step: 'connect',
 				message: 'Timeout'
 			});
-		}, 500);
+		}, 2000);
 		try{
 			options = options || {};
 			options.name = options.name || path;
@@ -234,6 +234,98 @@ SerialApi.getInfo = function (connectionId) {
 			});
 		};
 	});
+}
+/**
+* Chrome 62 introduced a bug that causes serial.getConnections to not fire
+* it's callback in case all connections have been closed. This is a workaround
+* to keep it working, by trying to allways have an open connection.
+* Bug fix is on it's way:
+* https://chromium-review.googlesource.com/c/chromium/src/+/741522
+**/
+SerialApi._safeGetConnectionsDummyConnections = []
+SerialApi._filterOutDummyConnections = connections => {
+	return connections.filter(connection =>
+		!SerialApi._safeGetConnectionsDummyConnections.filter(c =>
+			c.connectionId === connection.connectionId
+		).length
+	)
+}
+SerialApi.safeGetConnections = async () => {
+	try {
+		// Try first, if it works, good, move on.
+		const possibleConnections = await SerialApi.getConnections()
+		console.log(possibleConnections)
+		// But filter them, in case they are one of the dummy connections
+		const connections = SerialApi._filterOutDummyConnections(possibleConnections)
+		return connections
+	} catch (e) {}
+
+	// If it doesn't work, check if there are any connections on the
+	// _safeGetConnectionsDummyConnections stash, and if so, clear them.
+	if (SerialApi._safeGetConnectionsDummyConnections.length) {
+		for (connection of SerialApi._safeGetConnectionsDummyConnections) {
+			try {
+				await SerialApi.disconnect(connection.connectionId)
+			} catch (e) {}
+		}
+	}
+	SerialApi._safeGetConnectionsDummyConnections = []
+	// Create new dummy connections, based on the current devices
+	let devices = await SerialApi.getDevices()
+	// If the device is clearly a Quirkbot, we can filter it
+	devices = devices.filter(device => {
+		if(device.displayName && device.displayName.indexOf('Quirkbot') != -1){
+			return false
+		}
+		if(device.productId && device.productId === 0xF004){
+			return false
+		}
+		if(device.productId && device.productId === 0xF005){
+			return false
+		}
+		if(device.vendorId && device.vendorId === 0x2886){
+			return false
+		}
+		return true
+	})
+
+	for (device of devices) {
+		try {
+			const connection = await SerialApi.connect(device.path)
+			SerialApi._safeGetConnectionsDummyConnections.push(connection)
+		} catch (e) {}
+	}
+
+	// If there are no dummy connections just return early, with an empty array
+	if(!SerialApi._safeGetConnectionsDummyConnections.length) {
+		return []
+	}
+
+
+	// A small delay seems to be necessary
+	await delay(400)()
+
+	// Finally get the connections
+	const possibleConnections = await SerialApi.getConnections()
+
+	// But filter them, in case they are one of the dummy connections
+	const connections = SerialApi._filterOutDummyConnections(possibleConnections)
+	return connections
+}
+SerialApi.safeConnect = async (path, options) => {
+	// On windows it seems that if you try to connect to a port that is already
+	// connected, it will fail. And this will be a problem because of our dummy
+	// connections...
+	// So first try to connect normally
+	//try {
+	//	const connection = await SerialApi.connect(path, options)
+	//	return connection
+	//} catch (e) {}
+
+	// If that doesn't work, check if the path matches any of the dummy
+	// connections
+	SerialApi._safeGetConnectionsDummyConnections
+	console.log()
 }
 SerialApi.getConnections = function () {
 	return SerialApi._queueCall(function(resolve, reject){
