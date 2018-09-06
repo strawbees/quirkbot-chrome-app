@@ -24,15 +24,20 @@
 	},
 	"externally_connectable": {
 		"matches": [
+			"*://strawbees.com/*",
+			"*://stage.strawbees.com/*",
+			"*://code.strawbees.com/*",
+			"*://code-dev.strawbees.com/*",
+			"*://code-stage.strawbees.com/*",
+			"*://learning.strawbees.com/*",
+			"*://learning-stage.strawbees.com/*",
+			"*://learning-dev.strawbees.com/*",
 			"*://quirkbot.com/*",
-			"*://quirkbot.dev/*",
-			"*://quirkbot.local/*",
 			"*://ide.quirkbot.com/*",
 			"*://code.quirkbot.com/*",
 			"*://code-stage.quirkbot.com/*",
 			"*://code-local.quirkbot.com/*",
-			"*://ide-local.quirkbot.com/*",
-			"*://quirkbot.herokuapp.com/*"
+			"*://ide-local.quirkbot.com/*"
 		]
 	},
 	"permissions": [
