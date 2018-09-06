@@ -1,5 +1,5 @@
 {
-	"version": "0.2.9",
+	"version": "0.2.10",
 	"name": "__MSG_appName__",
 	"description": "__MSG_appDesc__",
 	"default_locale": "en",
@@ -24,15 +24,20 @@
 	},
 	"externally_connectable": {
 		"matches": [
+			"*://strawbees.com/*",
+			"*://stage.strawbees.com/*",
+			"*://code.strawbees.com/*",
+			"*://code-dev.strawbees.com/*",
+			"*://code-stage.strawbees.com/*",
+			"*://learning.strawbees.com/*",
+			"*://learning-stage.strawbees.com/*",
+			"*://learning-dev.strawbees.com/*",
 			"*://quirkbot.com/*",
-			"*://quirkbot.dev/*",
-			"*://quirkbot.local/*",
 			"*://ide.quirkbot.com/*",
 			"*://code.quirkbot.com/*",
 			"*://code-stage.quirkbot.com/*",
 			"*://code-local.quirkbot.com/*",
-			"*://ide-local.quirkbot.com/*",
-			"*://quirkbot.herokuapp.com/*"
+			"*://ide-local.quirkbot.com/*"
 		]
 	},
 	"permissions": [
