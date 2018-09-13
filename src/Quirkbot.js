@@ -1096,6 +1096,7 @@ var QuirkbotChromeExtension = function(){
 						quirkbot : {
 							interface: 'serial',
 							connectedAt: Date.now(),
+							runtimeId: Math.random().toFixed(8).substr(2),
 							uuid: '****TEMP' + Math.random().toFixed(8).substr(2),
 							nodes : [],
 							upload: {}
