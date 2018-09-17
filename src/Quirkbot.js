@@ -464,7 +464,14 @@ var QuirkbotChromeExtension = function(){
 						linkStash = []
 						resolve();
 					})
-
+					.catch(function(error){
+						console.error(
+							'Error clearing existing connections, resolving anyway.',
+							error
+						);
+						linkStash = []
+						resolve();
+					});
 				})
 				.catch(function(error){
 					console.error(
