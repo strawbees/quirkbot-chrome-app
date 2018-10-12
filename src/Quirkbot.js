@@ -1234,6 +1234,12 @@ var QuirkbotChromeExtension = function(){
 	Object.defineProperty(self, 'init', {
 		value: init
 	});
+	Object.defineProperty(self, 'ping', {
+		value: ping
+	});
+	Object.defineProperty(self, 'getModel', {
+		value: getModel
+	});
 }
 
 if(typeof define !== 'undefined'){
