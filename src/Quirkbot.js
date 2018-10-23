@@ -1237,6 +1237,10 @@ var QuirkbotChromeExtension = function(){
 	Object.defineProperty(self, 'ping', {
 		value: ping
 	});
+	Object.defineProperty(self, 'upload', {
+		value: uploadController
+	});
+
 	Object.defineProperty(self, 'getModel', {
 		value: getModel
 	});
