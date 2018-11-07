@@ -2,11 +2,11 @@ if (typeof window !== 'undefined'
 	&& typeof window.chrome !== 'undefined'
 	&& typeof window.chrome.serial !== 'undefined') {
 	require('./libs/chrome-arduino')
-	require('./libs/ChromeExternalAPIServer')
+	window.ChromeExternalAPIServer = require('./libs/ChromeExternalAPIServer')
 	require('./Utils')
 	require('./serial')
-	require('./HexUploader')
-	require('./Quirkbot')
+	window.HexUploader = require('./HexUploader')
+	window.QuirkbotChromeExtension = require('./QuirkbotChromeExtension')
 	require('./main')
 	module.exports = window.__quirkbotChromeApp
 }
