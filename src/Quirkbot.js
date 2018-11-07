@@ -1,6 +1,3 @@
-(function (){
-"use strict";
-
 var QuirkbotChromeExtension = function(){
 	var self = this;
 
@@ -1245,15 +1242,3 @@ var QuirkbotChromeExtension = function(){
 		value: getModel
 	});
 }
-
-if(typeof define !== 'undefined'){
-	define([], function(){
-		return QuirkbotChromeExtension;
-	});
-}
-else if (typeof exports !== 'undefined'){
-	exports.QuirkbotChromeExtension = QuirkbotChromeExtension;
-}
-else window.QuirkbotChromeExtension = QuirkbotChromeExtension;
-
-})();
