@@ -8,8 +8,5 @@ if (typeof window !== 'undefined'
 	require('./HexUploader')
 	require('./Quirkbot')
 	require('./main')
-}
-
-if (typeof window.__quirkbotChromeApp !== 'undefined') {
 	module.exports = window.__quirkbotChromeApp
 }
