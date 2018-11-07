@@ -6,7 +6,8 @@
 	"homepage": "https://github.com/Quirkbot/QuirkbotChromeApp",
 	"main": "src/index.js",
 	"scripts" : {
-		"build" : "node build.js"
+		"build" : "node build.js",
+		"publish" : "git checkout master && git push && git push --tags && git checkout develop && git push && yarn publish"
 	},
 	"devDependencies": {
 		"archiver": "^3.0.0"
