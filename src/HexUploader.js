@@ -1,6 +1,3 @@
-(function (){
-"use strict";
-
 var HexUploader = function(){
 	var self = this;
 
@@ -1070,15 +1067,3 @@ var HexUploader = function(){
 	});
 
 }
-
-if(typeof define !== 'undefined'){
-	define([], function(){
-		return HexUploader;
-	});
-}
-else if (typeof exports !== 'undefined'){
-	exports.HexUploader = HexUploader;
-}
-else window.HexUploader = HexUploader;
-
-})();
