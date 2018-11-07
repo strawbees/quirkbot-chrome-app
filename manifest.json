@@ -1,5 +1,5 @@
 {
-	"version": "0.2.21",
+	"version": "0.2.25",
 	"name": "__MSG_appName__",
 	"description": "__MSG_appDesc__",
 	"default_locale": "en",
@@ -14,9 +14,9 @@
 				"src/libs/chrome-arduino.js",
 				"src/libs/ChromeExternalAPIServer.js",
 				"src/Utils.js",
-				"src/serial.js",
+				"src/SerialApi.js",
 				"src/HexUploader.js",
-				"src/Quirkbot.js",
+				"src/QuirkbotChromeExtension.js",
 				"src/main.js"
 			]
 		}

@@ -1,9 +1,12 @@
-var ENABLE_LOG = true;
+var Utils = {};
+window.Utils = Utils
+
+Utils.ENABLE_LOG = true;
 /**
  * A passthrough promise generator.
  * It will simply resolve with all the arguments it was given
  */
-var run = function(){
+Utils.run = function(){
 	var payload = arguments;
 	return new Promise(function(resolve){
 		resolve.apply(null, payload);
@@ -24,18 +27,18 @@ var run = function(){
  * reject payload of the process, and  returns a promise that rejects if it
  * should reject early, or resolves if it should continue trying.
  */
-var tryToExecute = function(label, process, maxTries, interval, earlyRejectFilter){
+Utils.tryToExecute = function(label, process, maxTries, interval, earlyRejectFilter){
 	maxTries = maxTries || 1;
 	interval = interval || 1000;
-	earlyRejectFilter = earlyRejectFilter || run;
+	earlyRejectFilter = earlyRejectFilter || Utils.run;
 	label = label || 'Try to execute';
 	return function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
 			var count = 0;
 			var recursiveTry = function(){
-				run.apply(null, arguments)
-				.then(log(label + ': trial (' + (count+1) + '/' + maxTries + ')', true))
+				Utils.run.apply(null, arguments)
+				.then(Utils.log(label + ': trial (' + (count+1) + '/' + maxTries + ')', true))
 				.then(process)
 				.then(resolve)
 				.catch(function(){
@@ -55,7 +58,7 @@ var tryToExecute = function(label, process, maxTries, interval, earlyRejectFilte
 						// If the process failed, check if it passes the
 						// earlyRejectFilter, for a quick reject, or if it
 						// should continue trying,
-						run.apply(null, arguments)
+						Utils.run.apply(null, arguments)
 						.then(earlyRejectFilter)
 						.then(function () {
 							setTimeout(function(){
@@ -72,11 +75,11 @@ var tryToExecute = function(label, process, maxTries, interval, earlyRejectFilte
 		return new Promise(promise);
 	}
 }
-var log = function(label, ignorePayload){
+Utils.log = function(label, ignorePayload){
 	var fn =  function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
-			if(ENABLE_LOG){
+			if(Utils.ENABLE_LOG){
 				if(ignorePayload){
 					console.log('%c'+label , 'font-weight: bold')
 				}
@@ -99,7 +102,7 @@ var log = function(label, ignorePayload){
 
 	return fn;
 }
-var delay = function(millis){
+Utils.delay = function(millis){
 	return function(){
 		var payload = arguments;
 		var promise = function(resolve, reject){
@@ -112,7 +115,7 @@ var delay = function(millis){
 }
 
 
-var safeWhile = function(conditionFn, loopFn, errorFn, maxIterations){
+Utils.safeWhile = function(conditionFn, loopFn, errorFn, maxIterations){
 	maxIterations = maxIterations || 500;
 	var count =  0;
 	var forceBreak = false;
@@ -138,7 +141,7 @@ var safeWhile = function(conditionFn, loopFn, errorFn, maxIterations){
 	}
 }
 
-var compareArrays = function(a,b){
+Utils.compareArrays = function(a,b){
 	if(a.length != b.length) return false;
 
 	for (var i = 0; i < a.length; i++) {
@@ -148,7 +151,7 @@ var compareArrays = function(a,b){
 
 	return true;
 }
-var binToHex = function(bin) {
+Utils.binToHex = function(bin) {
 	var bufferView = new Uint8Array(bin);
 	var hexes = [];
 	for (var i = 0; i < bufferView.length; ++i) {
@@ -156,7 +159,7 @@ var binToHex = function(bin) {
 	}
 	return hexes;
 }
-var hexToBin = function(hex) {
+Utils.hexToBin = function(hex) {
 	var buffer = new ArrayBuffer(hex.length);
 	var bufferView = new Uint8Array(buffer);
 	for (var i = 0; i < hex.length; i++) {
@@ -164,13 +167,13 @@ var hexToBin = function(hex) {
 	}
 	return buffer;
 }
-var storeAsTwoBytes = function(n) {
+Utils.storeAsTwoBytes = function(n) {
 	var lo = (n & 0x00FF);
 	var hi = (n & 0xFF00) >> 8;
 	return [hi, lo];
 }
-var pad = function(data, pageSize) {
-	safeWhile(
+Utils.pad = function(data, pageSize) {
+	Utils.safeWhile(
 		function () {
 			return data.length % pageSize != 0;
 		},
@@ -181,7 +184,7 @@ var pad = function(data, pageSize) {
 
 	return data;
 }
-var objectArrayDiffByKey = function(A, B, key) {
+Utils.objectArrayDiffByKey = function(A, B, key) {
 	var map = {}, C = [];
 
 	for(var i = B.length; i--; )
@@ -195,7 +198,7 @@ var objectArrayDiffByKey = function(A, B, key) {
 	return C;
 }
 
-var mapProperty = function(array, property) {
+Utils.mapProperty = function(array, property) {
 	return array.map(function(item) {
 		return item[property];
 	})

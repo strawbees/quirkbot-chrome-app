@@ -32,14 +32,14 @@ var HexUploader = function(){
 	 **/
 	var uploadHex = function(link, hexString){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Started upload process', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Started upload process', true))
 			.then(addHexDataToLink(hexString))
-			.then(log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
-			.then(tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteData', enterBootaloderModeAndWriteData, 2,100))
-			.then(log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
-			.then(tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
-			.then(log('HEX-UPLOADER: Upload Process Completed!', true))
+			.then(Utils.log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteData', enterBootaloderModeAndWriteData, 2,100))
+			.then(Utils.log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
+			.then(Utils.log('HEX-UPLOADER: Upload Process Completed!', true))
 			.then(removeHexDataFromLink)
 			.then(resolve)
 			.catch(function(error){
@@ -48,17 +48,17 @@ var HexUploader = function(){
 				// verify if the upload failed because of that. If it did, we
 				// try to re-upload with a slitly different process, that will
 				// not assume the board is on bootloader mode.
-				run(link)
-				.then(log('HEX-UPLOADER: Verifying if upload failed because of an old Quirkbot...', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Verifying if upload failed because of an old Quirkbot...', true))
 				.then(verifyOldQuirkbotError(error))
-				.then(log('HEX-UPLOADER: Confirmed that upload failed because of an old Quirkbot!', true))
-				.then(log('HEX-UPLOADER: Starting upload process again...', true))
+				.then(Utils.log('HEX-UPLOADER: Confirmed that upload failed because of an old Quirkbot!', true))
+				.then(Utils.log('HEX-UPLOADER: Starting upload process again...', true))
 				.then(addHexDataToLink(hexString))
-				.then(log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
-				.then(tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteDataWithoutInitialVerification', enterBootaloderModeAndWriteDataWithoutInitialVerification, 2,100))
-				.then(log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
-				.then(tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
-				.then(log('HEX-UPLOADER: Upload Process Completed!', true))
+				.then(Utils.log('HEX-UPLOADER: Trying to enter the bootloader mode and write data...', true))
+				.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderModeAndWriteDataWithoutInitialVerification', enterBootaloderModeAndWriteDataWithoutInitialVerification, 2,100))
+				.then(Utils.log('HEX-UPLOADER: Trying to exit the bootloader mode and re-establish communication...', true))
+				.then(Utils.tryToExecute('HEX-UPLOADER: exitBootaloderModeAndRestablishCommunication', exitBootaloderModeAndRestablishCommunication, 1))
+				.then(Utils.log('HEX-UPLOADER: Upload Process Completed!', true))
 				.then(removeHexDataFromLink)
 				.then(resolve)
 				.catch(function(){
@@ -70,7 +70,7 @@ var HexUploader = function(){
 					}
 					console.error(rejectMessage);
 
-					run(link)
+					Utils.run(link)
 					.then(removeHexDataFromLink)
 					.then(function () {
 						reject(rejectMessage)
@@ -102,7 +102,7 @@ var HexUploader = function(){
 					return;
 				}
 				// pad data to correct page size
-				pad(hexData, avrProtocol.PAGE_SIZE)
+				Utils.pad(hexData, avrProtocol.PAGE_SIZE)
 
 				link.hexData = hexData;
 				link.lastSuccessfulPage = 0;
@@ -123,8 +123,8 @@ var HexUploader = function(){
 	var connectWithParams = function(options){
 		return function(link){
 			var promise = function(resolve, reject){
-				run(link)
-				.then(log('HEX-UPLOADER: Connecting with params to port '+link.device.path+' ...', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Connecting with params to port '+link.device.path+' ...', true))
 				.then(function() {
 					return SerialApi.connect(link.device.path, options);
 				})
@@ -143,8 +143,8 @@ var HexUploader = function(){
 					}
 					else{
 						link.connection = connection;
-						run(link)
-						.then(log('HEX-UPLOADER: Connected!', true))
+						Utils.run(link)
+						.then(Utils.log('HEX-UPLOADER: Connected!', true))
 						.then(resolve(link));
 					}
 				})
@@ -191,12 +191,12 @@ var HexUploader = function(){
 			.then(function(connections) {
 				return Promise.all(connections.map(function (connection) {
 					return new Promise(function(resolve, reject){
-						run()
-						.then(log('HEX-UPLOADER: Desconnecting port ' + connection.name, true))
+						Utils.run()
+						.then(Utils.log('HEX-UPLOADER: Desconnecting port ' + connection.name, true))
 						.then(function(){
 							return SerialApi.disconnect(connection.connectionId);
 						})
-						.then(log('HEX-UPLOADER: Disconnected!', true))
+						.then(Utils.log('HEX-UPLOADER: Disconnected!', true))
 						.then(resolve)
 						.catch(resolve);
 					});
@@ -225,7 +225,7 @@ var HexUploader = function(){
 	var send = function(payload){
 		return function(link){
 			var promise = function(resolve, reject){
-				SerialApi.send(link.connection.connectionId, hexToBin(payload))
+				SerialApi.send(link.connection.connectionId, Utils.hexToBin(payload))
 				.then(function(sendInfo){
 					if(sendInfo.error){
 						var rejectMessage = {
@@ -263,7 +263,7 @@ var HexUploader = function(){
 
 					var buffer = new Uint8Array(message.data);
 
-					if(compareArrays(buffer, response)){
+					if(Utils.compareArrays(buffer, response)){
 						chrome.serial.onReceive.removeListener(onReceive);
 						clearTimeout(timer);
 						resolve(link)
@@ -311,7 +311,7 @@ var HexUploader = function(){
 	var writeAndGetResponse = function(payload, response){
 		return function(link){
 			var promise = function(resolve, reject){
-				run(link)
+				Utils.run(link)
 				.then(send(payload))
 				.then(waitForResponse(response))
 				.then(resolve)
@@ -331,13 +331,13 @@ var HexUploader = function(){
 	}
 	var hopefullyWaitForDeviceRefresh = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Hopefully waiting device refresh...', true))
-			//.then(log('HEX-UPLOADER: Waiting for same device to disappear.', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Hopefully waiting device refresh...', true))
+			//.then(Utils.log('HEX-UPLOADER: Waiting for same device to disappear.', true))
 			//.then(waitForSameDeviceToDisappear)
-			.then(log('HEX-UPLOADER: Waiting for a new device to appear.', true))
+			.then(Utils.log('HEX-UPLOADER: Waiting for a new device to appear.', true))
 			.then(waitForNewDeviceToAppear(5000))
-			.then(log('HEX-UPLOADER: Device has refreshed.', true))
+			.then(Utils.log('HEX-UPLOADER: Device has refreshed.', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -355,8 +355,8 @@ var HexUploader = function(){
 
 				}
 
-				run(link)
-				.then(log('HEX-UPLOADER: Device did not refresh, resolving anyway...', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Device did not refresh, resolving anyway...', true))
 				.then(resolve)
 			});
 		}
@@ -396,9 +396,9 @@ var HexUploader = function(){
 						.then(filterMacTty)
 						.then(function(devices){
 
-							console.log('HEX-UPLOADER: Waiting devices...', count, mapProperty(intialDevices, 'path'), mapProperty(devices, 'path'));
+							console.log('HEX-UPLOADER: Waiting devices...', count, Utils.mapProperty(intialDevices, 'path'), Utils.mapProperty(devices, 'path'));
 							if(devices.length <= intialDevices.length){
-								var disappeared = objectArrayDiffByKey(intialDevices, devices, 'path');
+								var disappeared = Utils.objectArrayDiffByKey(intialDevices, devices, 'path');
 								if(disappeared.length){
 									disappeared = disappeared[0];
 									console.log('HEX-UPLOADER: A device disappeared:', disappeared);
@@ -413,7 +413,7 @@ var HexUploader = function(){
 							}
 
 							if(devices.length >= intialDevices.length){
-								var appeared = objectArrayDiffByKey(devices, intialDevices, 'path');
+								var appeared = Utils.objectArrayDiffByKey(devices, intialDevices, 'path');
 								if(appeared.length){
 									appeared = appeared[0];
 									console.log('HEX-UPLOADER: A device appeared:', appeared);
@@ -446,11 +446,11 @@ var HexUploader = function(){
 	}
 	var enterBootaloderModeAndWriteData = function(link, hexString){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
-			.then(tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderMode', guaranteeEnterBootaloderMode, 1, 100))
-			.then(log('HEX-UPLOADER: Trying to writeData...', true))
-			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderMode', guaranteeEnterBootaloderMode, 1, 100))
+			.then(Utils.log('HEX-UPLOADER: Trying to writeData...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -468,11 +468,11 @@ var HexUploader = function(){
 	}
 	var enterBootaloderModeAndWriteDataWithoutInitialVerification = function(link, hexString){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
-			.then(tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderModeWithoutInitialVerification', guaranteeEnterBootaloderModeWithoutInitialVerification, 1, 100))
-			.then(log('HEX-UPLOADER: Trying to writeData...', true))
-			.then(tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Ensure board is on Bootloader mode...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: guaranteeEnterBootaloderModeWithoutInitialVerification', guaranteeEnterBootaloderModeWithoutInitialVerification, 1, 100))
+			.then(Utils.log('HEX-UPLOADER: Trying to writeData...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: writeData', writeData, 10, 10))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -490,24 +490,24 @@ var HexUploader = function(){
 	}
 	var guaranteeEnterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
-			run(link)
+			Utils.run(link)
 			.then(forceDisconnect)
-			.then(log('HEX-UPLOADER: Making sure the connection is open.', true))
+			.then(Utils.log('HEX-UPLOADER: Making sure the connection is open.', true))
 			.then(ensureOpenConnection(openUploadConnection))
-			.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+			.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 			.then(verifyBootloaderMode)
-			.then(log('HEX-UPLOADER: Bootloader verified!', true))
+			.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
 			.then(resolve)
 			.catch(function(){
-				run(link)
-				.then(log('HEX-UPLOADER: Quirkbot is NOT on bootloader mode.', true))
-				.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
-				.then(tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
-				.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-				.then(tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
-				.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Quirkbot is NOT on bootloader mode.', true))
+				.then(Utils.log('HEX-UPLOADER: Trying to enter booloader mode...', true))
+				.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
+				.then(Utils.log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
+				.then(Utils.tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
+				.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 				.then(verifyBootloaderMode)
-				.then(log('HEX-UPLOADER: Bootloader verified!', true))
+				.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
@@ -525,14 +525,14 @@ var HexUploader = function(){
 	}
 	var guaranteeEnterBootaloderModeWithoutInitialVerification = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Trying to enter booloader mode...', true))
-			.then(tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
-			.then(log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-			.then(tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
-			.then(log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Trying to enter booloader mode...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
+			.then(Utils.log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
+			.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 			.then(verifyBootloaderMode)
-			.then(log('HEX-UPLOADER: Bootloader verified!', true))
+			.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -549,8 +549,8 @@ var HexUploader = function(){
 	}
 	var verifyBootloaderMode = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Verifying bootloader by usb descriptors', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Verifying bootloader by usb descriptors', true))
 			.then(function(link){
 				if(!link || !link.device || !link.device.productId){
 					throw new Error('Product id not avaiable');
@@ -563,7 +563,7 @@ var HexUploader = function(){
 						throw new Error('Product id does not match official ids');
 				}
 			})
-			.then(log('HEX-UPLOADER: Verified by usb descriptors!', true))
+			.then(Utils.log('HEX-UPLOADER: Verified by usb descriptors!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -574,11 +574,11 @@ var HexUploader = function(){
 				}
 				console.error(rejectMessage)
 				reject(rejectMessage)
-				/*run(link)
-				.then(log('HEX-UPLOADER: Descriptors verification failed!', true))
-				.then(log('HEX-UPLOADER: Verifying bootloader by identifier "QUIRKBO"', true))
+				/*Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Descriptors verification failed!', true))
+				.then(Utils.log('HEX-UPLOADER: Verifying bootloader by identifier "QUIRKBO"', true))
 				.then(checkSoftware('QUIRKBO'))
-				.then(log('HEX-UPLOADER: Verified by identifier!', true))
+				.then(Utils.log('HEX-UPLOADER: Verified by identifier!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
@@ -596,10 +596,10 @@ var HexUploader = function(){
 	}
 	var enterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Bootloader soft trigger.', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Bootloader soft trigger.', true))
 			.then(bootloaderSoftTrigger)
-			.then(log('HEX-UPLOADER: Wait device refresh.', true))
+			.then(Utils.log('HEX-UPLOADER: Wait device refresh.', true))
 			.then(waitForNewDeviceToAppear(3500))
 			.then(resolve)
 			.catch(function(){
@@ -612,10 +612,10 @@ var HexUploader = function(){
 				}
 				console.error(rejectMessage)
 
-				run(link)
-				.then(log('HEX-UPLOADER: Bootloader trigger.', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Bootloader trigger.', true))
 				.then(bootloaderTrigger)
-				.then(log('HEX-UPLOADER: Wait device refresh.', true))
+				.then(Utils.log('HEX-UPLOADER: Wait device refresh.', true))
 				.then(waitForNewDeviceToAppear(6000))
 				.then(resolve)
 				.catch(function(){
@@ -635,8 +635,8 @@ var HexUploader = function(){
 	}
 	var bootloaderSoftTrigger = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Sending ENTER_BOOTLOADER command.', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Sending ENTER_BOOTLOADER command.', true))
 			.then(send([avrProtocol.ENTER_BOOTLOADER]))
 			.then(resolve)
 			.catch(function(){
@@ -654,19 +654,19 @@ var HexUploader = function(){
 	}
 	var bootloaderTrigger = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Making sure port is disconnected', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Making sure port is disconnected', true))
 			.then(forceDisconnect)
-			.then(delay(100))
-			.then(log('HEX-UPLOADER: Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection...', true))
+			.then(Utils.delay(100))
+			.then(Utils.log('HEX-UPLOADER: Triggering reset by opening and closing a '+avrProtocol.RESET_BITRATE+' baudrate connection...', true))
 			.then(function(link){
 				// Noticed on Windows 10 that chrome.serial.connect reported a
 				// connection error, but the board would go on bootloader anyway.
 				// Since the point of this connection is just to trigger the booloader
 				// we will ignore errors and resolve anyway
 				return new Promise(function(resolve, reject) {
-					run(link)
-					.then(log('HEX-UPLOADER: connecting (ignore connection error)...', true))
+					Utils.run(link)
+					.then(Utils.log('HEX-UPLOADER: connecting (ignore connection error)...', true))
 					.then(connectWithParams({
 						bitrate: avrProtocol.RESET_BITRATE
 					}))
@@ -676,8 +676,8 @@ var HexUploader = function(){
 					});
 				});
 			}) 
-			.then(delay(100))
-			.then(log('HEX-UPLOADER: disconnecting...', true))
+			.then(Utils.delay(100))
+			.then(Utils.log('HEX-UPLOADER: disconnecting...', true))
 			.then(forceDisconnect)
 			.then(resolve)
 			.catch(function(){
@@ -695,10 +695,10 @@ var HexUploader = function(){
 	}
 	var writeData = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Setting programing address...', true))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Setting programing address...', true))
 			.then(setProgrammingAddress)
-			.then(log('HEX-UPLOADER: Write pages...', true))
+			.then(Utils.log('HEX-UPLOADER: Write pages...', true))
 			.then(writePagesRecursivelly)
 			.then(resolve)
 			.catch(function(){
@@ -720,15 +720,15 @@ var HexUploader = function(){
 			var promise = function(resolve, reject){
 				// If the connection looks healty, resolve early
 				if(link.connection && link.connection.bitrate){
-					run(link)
-					.then(log('HEX-UPLOADER: Connection is open...', true))
+					Utils.run(link)
+					.then(Utils.log('HEX-UPLOADER: Connection is open...', true))
 					.then(resolve);
 
 					return;
 				}
 
-				run(link)
-				.then(log('HEX-UPLOADER: Connection was down, opening again...', true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Connection was down, opening again...', true))
 				.then(openConnectionRoutine)
 				.then(resolve)
 				.catch(function(){
@@ -747,14 +747,14 @@ var HexUploader = function(){
 	}
 	var openUploadConnection = function(link){
 		var promise = function(resolve, reject){
-			run(link)
+			Utils.run(link)
 			.then(forceDisconnect)
-			.then(delay(500))
-			.then(log('HEX-UPLOADER: Connecting with '+avrProtocol.UPLOAD_BITRATE+' baudrate', true))
+			.then(Utils.delay(500))
+			.then(Utils.log('HEX-UPLOADER: Connecting with '+avrProtocol.UPLOAD_BITRATE+' baudrate', true))
 			.then(connectWithParams({
 				bitrate: avrProtocol.UPLOAD_BITRATE
 			}))
-			//.then(delay(500))
+			//.then(Utils.delay(500))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -771,14 +771,14 @@ var HexUploader = function(){
 	}
 	var openCommunicationConnection = function(link){
 		var promise = function(resolve, reject){
-			run(link)
+			Utils.run(link)
 			.then(forceDisconnect)
-			.then(delay(500))
-			.then(log('HEX-UPLOADER: Connecting with '+avrProtocol.COMMUNICATION_BITRATE+' baudrate', true))
+			.then(Utils.delay(500))
+			.then(Utils.log('HEX-UPLOADER: Connecting with '+avrProtocol.COMMUNICATION_BITRATE+' baudrate', true))
 			.then(connectWithParams({
 				bitrate: avrProtocol.COMMUNICATION_BITRATE
 			}))
-			//.then(delay(500))
+			//.then(Utils.delay(500))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -799,9 +799,9 @@ var HexUploader = function(){
 				return s.charCodeAt(0);
 			})
 			var promise = function(resolve, reject){
-				run(link)
+				Utils.run(link)
 				.then(writeAndGetResponse([avrProtocol.SOFTWARE_IDENTIFIER], identifierChars))
-				.then(log('HEX-UPLOADER: Software match!', true))
+				.then(Utils.log('HEX-UPLOADER: Software match!', true))
 				.then(resolve)
 				.catch(function(){
 					var rejectMessage = {
@@ -819,13 +819,13 @@ var HexUploader = function(){
 	}
 	var exitBootaloderModeAndRestablishCommunication = function(link){
 		var promise = function(resolve, reject){
-			run(link)
-			.then(log('HEX-UPLOADER: Trying to issue command to exit bootloader...', true))
-			.then(tryToExecute('HEX-UPLOADER: exitBootlader', exitBootlader, 5, 200))
-			.then(log('HEX-UPLOADER: Wait device refresh.', true))
-			.then(tryToExecute('HEX-UPLOADER: hopefullyWaitForDeviceRefresh', hopefullyWaitForDeviceRefresh, 1))
-			.then(log('HEX-UPLOADER: Trying to open the communication connection...', true))
-			.then(tryToExecute('HEX-UPLOADER: openCommunicationConnection', openCommunicationConnection, 5, 200))
+			Utils.run(link)
+			.then(Utils.log('HEX-UPLOADER: Trying to issue command to exit bootloader...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: exitBootlader', exitBootlader, 5, 200))
+			.then(Utils.log('HEX-UPLOADER: Wait device refresh.', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: hopefullyWaitForDeviceRefresh', hopefullyWaitForDeviceRefresh, 1))
+			.then(Utils.log('HEX-UPLOADER: Trying to open the communication connection...', true))
+			.then(Utils.tryToExecute('HEX-UPLOADER: openCommunicationConnection', openCommunicationConnection, 5, 200))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -842,7 +842,7 @@ var HexUploader = function(){
 	}
 	var exitBootlader = function(link){
 		var promise = function(resolve, reject){
-			run(link)
+			Utils.run(link)
 			.then(writeAndGetResponse([avrProtocol.EXIT_BOOTLOADER], [avrProtocol.CR]))
 			.then(resolve)
 			.catch(function(){
@@ -861,8 +861,8 @@ var HexUploader = function(){
 	var setProgrammingAddress = function(link){
 		var promise = function(resolve, reject){
 			var address = link.lastSuccessfulPage * (avrProtocol.PAGE_SIZE / 2);
-			var addressBytes = storeAsTwoBytes(address);
-			run(link)
+			var addressBytes = Utils.storeAsTwoBytes(address);
+			Utils.run(link)
 			.then(writeAndGetResponse(
 				[
 					avrProtocol.SET_ADDRESS,
@@ -871,7 +871,7 @@ var HexUploader = function(){
 				],
 				[avrProtocol.CR])
 			)
-			.then(log('HEX-UPLOADER: Address set!', true))
+			.then(Utils.log('HEX-UPLOADER: Address set!', true))
 			.then(resolve)
 			.catch(function(){
 				var rejectMessage = {
@@ -892,8 +892,8 @@ var HexUploader = function(){
 
 			var page = link.lastSuccessfulPage || 0 ;
 			var write = function(){
-				run(link)
-				.then(log('HEX-UPLOADER: Writing page ' + (page + 1) + '/' + numPages, true))
+				Utils.run(link)
+				.then(Utils.log('HEX-UPLOADER: Writing page ' + (page + 1) + '/' + numPages, true))
 				.then(writePage(page))
 				.then(function() {
 					page++;
@@ -927,9 +927,9 @@ var HexUploader = function(){
 					(pageNo + 1) *  avrProtocol.PAGE_SIZE
 				);
 
-				var sizeBytes = storeAsTwoBytes(avrProtocol.PAGE_SIZE);
+				var sizeBytes = Utils.storeAsTwoBytes(avrProtocol.PAGE_SIZE);
 
-				run(link)
+				Utils.run(link)
 				.then(
 					writeAndGetResponse(
 						[ avrProtocol.WRITE, sizeBytes[0], sizeBytes[1], avrProtocol.TYPE_FLASH ].concat(payload),
