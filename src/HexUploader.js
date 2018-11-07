@@ -1067,3 +1067,4 @@ var HexUploader = function(){
 	});
 
 }
+window.HexUploader = HexUploader

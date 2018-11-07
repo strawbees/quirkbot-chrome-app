@@ -1,11 +1,11 @@
 (() => {
 	// Init the extension ----------------------------------------------------------
-	window.__quirkbotChromeApp = new QuirkbotChromeExtension();
+	var quirkbotChromeExtension = new QuirkbotChromeExtension();
 	var inited = false;
 	var init = function() {
 		if(inited) return;
 		inited = true;
-		window.__quirkbotChromeApp.init();
+		quirkbotChromeExtension.init();
 
 	}
 	chrome.runtime.onInstalled.addListener(init);

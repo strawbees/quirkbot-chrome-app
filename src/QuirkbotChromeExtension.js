@@ -1242,3 +1242,4 @@ var QuirkbotChromeExtension = function(){
 		value: getModel
 	});
 }
+window.QuirkbotChromeExtension = QuirkbotChromeExtension

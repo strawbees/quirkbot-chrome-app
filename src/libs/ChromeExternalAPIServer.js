@@ -169,3 +169,4 @@ var ChromeExternalAPIServer = function(){
 		value: registerEvent
 	});
 }
+window.ChromeExternalAPIServer = ChromeExternalAPIServer

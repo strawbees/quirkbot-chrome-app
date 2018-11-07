@@ -14,7 +14,7 @@
 				"src/libs/chrome-arduino.js",
 				"src/libs/ChromeExternalAPIServer.js",
 				"src/Utils.js",
-				"src/serial.js",
+				"src/SerialApi.js",
 				"src/HexUploader.js",
 				"src/QuirkbotChromeExtension.js",
 				"src/main.js"

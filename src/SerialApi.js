@@ -594,3 +594,4 @@ SerialApi.binaryToString = function(binary) {
 	}
 	return String.fromCharCode.apply(null, chars);
 }
+window.SerialApi = SerialApi
