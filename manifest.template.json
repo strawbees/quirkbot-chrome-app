@@ -15,7 +15,6 @@
 				"src/libs/ChromeExternalAPIServer.js",
 				"src/Utils.js",
 				"src/serial.js",
-				"src/usb.js",
 				"src/HexUploader.js",
 				"src/Quirkbot.js",
 				"src/main.js"
