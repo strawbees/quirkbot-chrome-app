@@ -4,7 +4,7 @@ if (typeof window !== 'undefined'
 	require('./libs/chrome-arduino')
 	require('./libs/ChromeExternalAPIServer')
 	require('./Utils')
-	require('./serial')
+	require('./SerialApi')
 	require('./HexUploader')
 	require('./QuirkbotChromeExtension')
 	const quirkbotChromeExtension = new QuirkbotChromeExtension()
