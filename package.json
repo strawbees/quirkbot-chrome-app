@@ -1,25 +1,14 @@
 {
-     "name": "quirkbot-chrome-app",
-     "version": "0.2.15",
-     "description": "Quirkbot Chrome App",
-     "author": "Paulo Barcelos <paulo@quirkbot.com>",
-     "homepage": "https://github.com/Quirkbot/QuirkbotChromeApp",
-     "main" : "src/index.js",
-     "devDependencies": {
-          "gulp": "^3.9.1",
-          "gulp-clean": "^0.3.2",
-          "gulp-load-plugins": "^1.2.0",
-          "gulp-prompt": "^0.1.2",
-          "gulp-s3": "^0.3.0",
-          "merge-stream": "^1.0.0",
-          "run-sequence": "^1.1.5",
-          "yargs": "^4.2.0"
-     },
-     "scripts": {
-          "gulp": "node ./node_modules/gulp/bin/gulp.js",
-          "gulp:xunit": "npm run gulp -- --reporter xunit",
-          "deploy:npm": "npm run gulp -- build && npm publish",
-          "deploy:stage" : "npm run gulp -- deploy --environment=stage",
-          "deploy:production" : "npm run gulp -- deploy --environment=production"
-     }
+	"name": "quirkbot-chrome-app",
+	"version": "0.2.16",
+	"description": "Quirkbot Chrome App",
+	"author": "Paulo Barcelos <paulo@quirkbot.com>",
+	"homepage": "https://github.com/Quirkbot/QuirkbotChromeApp",
+	"main": "src/index.js",
+	"scripts" : {
+		"build" : "node build.js"
+	},
+	"devDependencies": {
+		"archiver": "^3.0.0"
+	}
 }
