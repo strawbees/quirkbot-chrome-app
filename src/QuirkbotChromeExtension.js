@@ -65,7 +65,7 @@ var QuirkbotChromeExtension = function(){
 		.then(continuouslyMonitorQuirkbots);
 
 		// Start resting Quirkbots that have failed to connect several times
-		//run()
+		//Utils.run()
 		//.then(continuouslyResetQuirkbots);
 
 		// Keep sending data to the links
@@ -252,7 +252,7 @@ var QuirkbotChromeExtension = function(){
 				var uuidBuffer = [];
 				var uuid;
 				if(link.buffer.indexOf(UUID_DELIMITER) !== -1){
-					safeWhile(
+					Utils.safeWhile(
 						function () {
 							return link.buffer[0] !== UUID_DELIMITER;
 						},
@@ -283,7 +283,7 @@ var QuirkbotChromeExtension = function(){
 				// Extract number of nodes
 				var nodesNumBuffer = [];
 				if(link.buffer.indexOf(NUMBER_OF_NODES_DELIMITER) !== -1){
-					safeWhile(
+					Utils.safeWhile(
 						function () {
 							return link.buffer[0] !== NUMBER_OF_NODES_DELIMITER
 						},
@@ -307,14 +307,14 @@ var QuirkbotChromeExtension = function(){
 				// Extract number of nodes content
 				var nodes = []
 
-				safeWhile(
+				Utils.safeWhile(
 					function () {
 						return link.buffer.length
 					},
 					function () {
 						var nodesBuffer = [];
 						if(link.buffer.indexOf(NODE_CONTENT_DELIMITER) !== -1){
-							safeWhile(
+							Utils.safeWhile(
 								function () {
 									return link.buffer[0] !== NODE_CONTENT_DELIMITER;
 								},
@@ -429,19 +429,19 @@ var QuirkbotChromeExtension = function(){
 
 
 		checkIfExtensionIsActive()
-		.then(delay(30))
+		.then(Utils.delay(30))
 		.then(recursivellydispatchModelChangeEvent)
 		.catch(function(){
-			run()
-			.then(delay(3000))
+			Utils.run()
+			.then(Utils.delay(3000))
 			.then(recursivellydispatchModelChangeEvent);
 		})
 	}
 	// Close all serial links --------------------------------------------
 	var closeAllSerialConnections = function(){
 		var promise = function(resolve, reject){
-			run()
-			.then(log('MONITOR: closeAllSerialConnections...', true))
+			Utils.run()
+			.then(Utils.log('MONITOR: closeAllSerialConnections...', true))
 			.then(SerialApi.safeGetConnections)
 			.then(function(connections){
 				var promises = [];
@@ -497,9 +497,9 @@ var QuirkbotChromeExtension = function(){
 			checkIfExtensionIsActive()
 			.then(function(){
 
-				run()
+				Utils.run()
 				.then(sendDataToLinks)
-				.then(delay(100))
+				.then(Utils.delay(100))
 				// recurse...
 				.then(continuouslySendDataToLinks)
 				.catch(function(error){
@@ -507,16 +507,16 @@ var QuirkbotChromeExtension = function(){
 						'Quirkbot data send routine was rejected, rescheduling now.',
 						error
 					);
-					run()
-					.then(delay(100))
+					Utils.run()
+					.then(Utils.delay(100))
 					.then(continuouslySendDataToLinks)
 				});
 				resolve();
 			})
 			.catch(function(error){
 				console.log('The extension is iddle, rescheduling now.', error );
-				run()
-				.then(delay(5000))
+				Utils.run()
+				.then(Utils.delay(5000))
 				.then(continuouslySendDataToLinks)
 			})
 		}
@@ -559,9 +559,9 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			checkIfExtensionIsActive()
 			.then(function(){
-				run()
+				Utils.run()
 				.then(monitorQuirkbots)
-				.then(delay(hold))
+				.then(Utils.delay(hold))
 				// recurse...
 				.then(continuouslyMonitorQuirkbots)
 				.catch(function(error){
@@ -569,17 +569,17 @@ var QuirkbotChromeExtension = function(){
 						'Quirkbot monitor routine was rejected, rescheduling now.',
 						error
 					);
-					run()
-					.then(delay(hold))
+					Utils.run()
+					.then(Utils.delay(hold))
 					.then(continuouslyMonitorQuirkbots)
 				});
 				resolve();
 			})
 			.catch(function(error){
 				console.log('The extension is iddle, rescheduling now.', error );
-				run()
+				Utils.run()
 				.then(closeAllSerialConnections)
-				.then(delay(iddleHold))
+				.then(Utils.delay(iddleHold))
 				.then(continuouslyMonitorQuirkbots)
 			})
 		}
@@ -589,7 +589,7 @@ var QuirkbotChromeExtension = function(){
 	var monitorQuirkbots = function(){
 		var promise = function(resolve, reject){
 			monitorPending = true;
-			run()
+			Utils.run()
 			.then(checkIfUploadIsNotPending)
 			.then(cleanConnections)
 			.then(handleDevices)
@@ -607,16 +607,16 @@ var QuirkbotChromeExtension = function(){
 	}
 	var cleanConnections = function(){
 		var promise = function(resolve, reject){
-			run()
-			.then(log('MONITOR: Cleaning connections...', true))
+			Utils.run()
+			.then(Utils.log('MONITOR: Cleaning connections...', true))
 			.then(disconnectDeadConnections)
-			.then(log('MONITOR: disconnectDeadConnections'))
+			.then(Utils.log('MONITOR: disconnectDeadConnections'))
 			.then(disconnectConnectionsOnDeadDevices)
-			.then(log('MONITOR: disconnectConnectionsOnDeadDevices'))
+			.then(Utils.log('MONITOR: disconnectConnectionsOnDeadDevices'))
 			.then(disconnectConnectionsNotOnStack)
-			.then(log('MONITOR: disconnectConnectionsNotOnStack'))
+			.then(Utils.log('MONITOR: disconnectConnectionsNotOnStack'))
 			.then(removeLostLinksFromStash)
-			.then(log('MONITOR: removeLostLinksFromStash', true))
+			.then(Utils.log('MONITOR: removeLostLinksFromStash', true))
 			.then(resolve)
 			.catch(reject);
 		}
@@ -624,20 +624,20 @@ var QuirkbotChromeExtension = function(){
 	}
 	var handleDevices = function(){
 		var promise = function(resolve, reject){
-			run()
-			.then(log('MONITOR: Monitoring devices...', true))
+			Utils.run()
+			.then(Utils.log('MONITOR: Monitoring devices...', true))
 			.then(fetchDevices)
-			.then(log('MONITOR: fetchDevices'))
+			.then(Utils.log('MONITOR: fetchDevices'))
 			.then(filterDevicesByUSBDescriptors)
-			.then(log('MONITOR: filterDevicesByUSBDescriptors'))
+			.then(Utils.log('MONITOR: filterDevicesByUSBDescriptors'))
 			.then(filterDevicesDoublePortsOnMac)
-			.then(log('MONITOR: filterDevicesDoublePortsOnMac'))
+			.then(Utils.log('MONITOR: filterDevicesDoublePortsOnMac'))
 			//.then(filterDevicesWithTooManyFailedAttempts)
-			//.then(log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
+			//.then(Utils.log('MONITOR: filterDevicesWithTooManyFailedAttempts'))
 			.then(filterDevicesAlreadyInStash)
-			.then(log('MONITOR: filterDevicesAlreadyInStash'))
+			.then(Utils.log('MONITOR: filterDevicesAlreadyInStash'))
 			.then(flagPossibleLinuxPermissionProblem)
-			.then(log('MONITOR: flagPossibleLinuxPermissionProblem', true))
+			.then(Utils.log('MONITOR: flagPossibleLinuxPermissionProblem', true))
 			.then(resolve)
 			.catch(reject);
 		}
@@ -645,14 +645,14 @@ var QuirkbotChromeExtension = function(){
 	}
 	var stablishAndMonitorConnections = function(devices){
 		var promise = function(resolve, reject){
-			run(devices)
-			.then(log('MONITOR: Monitoring connections...', true))
+			Utils.run(devices)
+			.then(Utils.log('MONITOR: Monitoring connections...', true))
 			.then(stablishConnections)
-			.then(log('MONITOR: stablishConnections'))
+			.then(Utils.log('MONITOR: stablishConnections'))
 			.then(filterUnsuccessfullConnections)
-			.then(log('MONITOR: filterUnsuccessfullConnections'))
+			.then(Utils.log('MONITOR: filterUnsuccessfullConnections'))
 			.then(monitorLinks)
-			.then(log('MONITOR: monitorLinks'))
+			.then(Utils.log('MONITOR: monitorLinks'))
 			.then(resolve)
 			.catch(reject);
 		}
@@ -660,7 +660,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var checkIfExtensionIsActive = function(){
 		var promise = function(resolve, reject){
-			run()
+			Utils.run()
 			.then(function() {
 				if(Date.now() - pingTime > 5000){
 					throw 'Last ping was more than 5 seconds ago.'
@@ -681,8 +681,8 @@ var QuirkbotChromeExtension = function(){
 	}
 	var checkIfUploadIsNotPending = function(){
 		var promise = function(resolve, reject){
-			run()
-			.then(log('MONITOR: Checking if upload is not pending...', true))
+			Utils.run()
+			.then(Utils.log('MONITOR: Checking if upload is not pending...', true))
 			.then(function() {
 				if(uploadPending){
 					throw 'uploadPending is false'
@@ -723,7 +723,6 @@ var QuirkbotChromeExtension = function(){
 								resolve();
 							})
 							.catch(function() {
-								console.log('aaa', arguments)
 								resolve(connection);
 							})
 						})
@@ -1147,7 +1146,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var monitorSingleLink = function(link){
 		var promise = function(resolve, reject){
-			run(link)
+			Utils.run(link)
 			// We can now check if the board is on bootloader mode.
 			.then(detectBootloaderMode)
 			// If we got here, we assume the link is stablished.
@@ -1163,7 +1162,7 @@ var QuirkbotChromeExtension = function(){
 	var detectBootloaderMode = function(link){
 		var promise = function(resolve, reject){
 			var hexUploader = new HexUploader();
-			run(link)
+			Utils.run(link)
 			.then(hexUploader.verifyBootloaderMode)
 			.then(function(link) {
 				link.quirkbot.bootloader = true;

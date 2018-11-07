@@ -303,7 +303,7 @@ SerialApi.safeGetConnections = async () => {
 
 
 	// A small delay seems to be necessary
-	await delay(400)()
+	await Utils.delay(400)()
 
 	// Finally get the connections
 	const possibleConnections = await SerialApi.getConnections()
