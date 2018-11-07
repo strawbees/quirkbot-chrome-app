@@ -1,10 +1,6 @@
 .DS_Store
 node_modules
 npm-debug.log
+build-*.zip
+.tmp
 modified-chrome-arduino
-quirkbot.zip
-quirkbot-chrome-app
-quirkbot-chrome-app.zip
-quirkbot-chrome-app-*
-s3_publish
-aws-config

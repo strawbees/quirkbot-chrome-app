@@ -1,5 +1,5 @@
 {
-	"version": "0.2.14",
+	"version": "0.2.16",
 	"name": "__MSG_appName__",
 	"description": "__MSG_appDesc__",
 	"default_locale": "en",
@@ -15,7 +15,6 @@
 				"src/libs/ChromeExternalAPIServer.js",
 				"src/Utils.js",
 				"src/serial.js",
-				"src/usb.js",
 				"src/HexUploader.js",
 				"src/Quirkbot.js",
 				"src/main.js"
