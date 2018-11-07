@@ -16,7 +16,7 @@
 				"src/Utils.js",
 				"src/serial.js",
 				"src/HexUploader.js",
-				"src/Quirkbot.js",
+				"src/QuirkbotChromeExtension.js",
 				"src/main.js"
 			]
 		}
