@@ -609,10 +609,10 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			Utils.run()
 			.then(Utils.log('MONITOR: Cleaning connections...', true))
-			.then(disconnectDeadConnections)
-			.then(Utils.log('MONITOR: disconnectDeadConnections'))
 			.then(disconnectConnectionsOnDeadDevices)
 			.then(Utils.log('MONITOR: disconnectConnectionsOnDeadDevices'))
+			.then(disconnectDeadConnections)
+			.then(Utils.log('MONITOR: disconnectDeadConnections'))
 			.then(disconnectConnectionsNotOnStack)
 			.then(Utils.log('MONITOR: disconnectConnectionsNotOnStack'))
 			.then(removeLostLinksFromStash)
@@ -772,22 +772,25 @@ var QuirkbotChromeExtension = function(){
 			// device looks dead
 			.then(function(connections) {
 				return connections.filter(function (connection) {
-					var dead = false;
+					var dead = true;
 					devices.forEach(function(device) {
 						if(device.path == connection.name){
 							if(device.displayName && device.displayName.indexOf('Quirkbot') != -1){
+								dead = false;
 								return;
 							}
 							if(device.productId && device.productId === 0xF004){
+								dead = false;
 								return;
 							}
 							if(device.productId && device.productId === 0xF005){
+								dead = false;
 								return;
 							}
 							if(device.vendorId && device.vendorId === 0x2886){
+								dead = false;
 								return;
 							}
-							dead = true;
 						}
 					})
 					return dead;
