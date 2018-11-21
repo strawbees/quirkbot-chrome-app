@@ -442,7 +442,7 @@ var QuirkbotChromeExtension = function(){
 		var promise = function(resolve, reject){
 			Utils.run()
 			.then(Utils.log('MONITOR: closeAllSerialConnections...', true))
-			.then(SerialApi.safeGetConnections)
+			.then(SerialApi.getConnections)
 			.then(function(connections){
 				var promises = [];
 				connections.forEach(function(connection){
@@ -456,7 +456,7 @@ var QuirkbotChromeExtension = function(){
 				})
 				Promise.all(promises)
 				.then(function(){
-					SerialApi.safeGetConnections()
+					SerialApi.getConnections()
 					.then(function(connections){
 						linkStash = []
 						resolve();
@@ -705,7 +705,7 @@ var QuirkbotChromeExtension = function(){
 		var promise = function (resolve, reject) {
 			// To figure out wich connections are dead, try to get the
 			// control signals of each of them.
-			SerialApi.safeGetConnections()
+			SerialApi.getConnections()
 			.then(function(connections) {
 				return Promise.all(connections.map(function (connection) {
 					return new Promise(function(resolve, reject) {
@@ -766,7 +766,7 @@ var QuirkbotChromeExtension = function(){
 			SerialApi.getDevices()
 			.then(function(_devices) {
 				devices = _devices;
-				return SerialApi.safeGetConnections();
+				return SerialApi.getConnections();
 			})
 			// Match the connections with the device list, include it if the
 			// device looks dead
@@ -816,7 +816,7 @@ var QuirkbotChromeExtension = function(){
 	}
 	var disconnectConnectionsNotOnStack = function(){
 		var promise = function (resolve, reject) {
-			SerialApi.safeGetConnections()
+			SerialApi.getConnections()
 			.then(function(connections) {
 				var notOnStack = connections.filter(function (connection) {
 					var exists = false;
@@ -849,7 +849,7 @@ var QuirkbotChromeExtension = function(){
 	var removeLostLinksFromStash = function(){
 		var promise = function (resolve, reject) {
 			// Get a fresh list of connections
-			SerialApi.safeGetConnections()
+			SerialApi.getConnections()
 			.then(function(connections) {
 				// Update the connection of the links
 				linkStash.forEach(function(link){
