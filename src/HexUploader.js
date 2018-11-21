@@ -165,7 +165,7 @@ var HexUploader = function(){
 	var forceDisconnect = function(link){
 		var promise = function(resolve, reject){
 			// Get a list of all the possible connections associated with the link
-			SerialApi.safeGetConnections()
+			SerialApi.getConnections()
 			.then(function(connections) {
 				// Filter the ones that are on the same port as the current connection
 				var filteredConnections = connections.filter(function (connection) {

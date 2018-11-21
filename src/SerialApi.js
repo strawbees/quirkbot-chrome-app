@@ -312,21 +312,6 @@ SerialApi.safeGetConnections = async () => {
 	const connections = SerialApi._filterOutDummyConnections(possibleConnections)
 	return connections
 }
-SerialApi.safeConnect = async (path, options) => {
-	// On windows it seems that if you try to connect to a port that is already
-	// connected, it will fail. And this will be a problem because of our dummy
-	// connections...
-	// So first try to connect normally
-	//try {
-	//	const connection = await SerialApi.connect(path, options)
-	//	return connection
-	//} catch (e) {}
-
-	// If that doesn't work, check if the path matches any of the dummy
-	// connections
-	SerialApi._safeGetConnectionsDummyConnections
-	console.log()
-}
 SerialApi.getConnections = function () {
 	return SerialApi._queueCall(function(resolve, reject){
 		var timer = setTimeout(function (argument) {
