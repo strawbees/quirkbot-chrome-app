@@ -1,6 +1,6 @@
 {
-	"name": "quirkbot-chrome-app",
 	"version": "0.3.3",
+	"name": "@strawbees/quirkbot-chrome-app",
 	"description": "Quirkbot Chrome App",
 	"homepage": "https://github.com/strawbees/quirkbot-chrome-app",
 	"main": "src/index.js",
