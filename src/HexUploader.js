@@ -619,7 +619,6 @@ var HexUploader = function(){
 				.then(waitForNewDeviceToAppear(6000))
 				.then(resolve)
 				.catch(function(){
-					// If the soft trigger desn't work, try the connect/disconnect trigger
 					var rejectMessage = {
 						file: 'HexUploader',
 						step: 'enterBootaloderMode -> trigger',
