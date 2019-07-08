@@ -491,9 +491,8 @@ var HexUploader = function(){
 	var guaranteeEnterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
 			Utils.run(link)
-			.then(forceDisconnect)
 			.then(Utils.log('HEX-UPLOADER: Making sure the connection is open.', true))
-			.then(ensureOpenConnection(openUploadConnection))
+			.then(ensureOpenConnection(openCommunicationConnection))
 			.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 			.then(verifyBootloaderMode)
 			.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
@@ -504,7 +503,7 @@ var HexUploader = function(){
 				.then(Utils.log('HEX-UPLOADER: Trying to enter booloader mode...', true))
 				.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
 				.then(Utils.log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-				.then(Utils.tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
+				.then(Utils.tryToExecute('HEX-UPLOADER: openCommunicationConnection', openCommunicationConnection, 2, 500))
 				.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 				.then(verifyBootloaderMode)
 				.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
@@ -529,7 +528,7 @@ var HexUploader = function(){
 			.then(Utils.log('HEX-UPLOADER: Trying to enter booloader mode...', true))
 			.then(Utils.tryToExecute('HEX-UPLOADER: enterBootaloderMode', enterBootaloderMode, 2, 100))
 			.then(Utils.log('HEX-UPLOADER: Trying to open a connection with the Bootloader...', true))
-			.then(Utils.tryToExecute('HEX-UPLOADER: openUploadConnection', openUploadConnection, 2, 500))
+			.then(Utils.tryToExecute('HEX-UPLOADER: openCommunicationConnection', openCommunicationConnection, 2, 500))
 			.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
 			.then(verifyBootloaderMode)
 			.then(Utils.log('HEX-UPLOADER: Bootloader verified!', true))
@@ -600,7 +599,7 @@ var HexUploader = function(){
 			.then(Utils.log('HEX-UPLOADER: Bootloader soft trigger.', true))
 			.then(bootloaderSoftTrigger)
 			.then(Utils.log('HEX-UPLOADER: Wait device refresh.', true))
-			.then(waitForNewDeviceToAppear(3500))
+			.then(waitForNewDeviceToAppear(6000))
 			.then(resolve)
 			.catch(function(){
 				// If the soft trigger desn't work, try the connect/disconnect trigger
@@ -619,7 +618,6 @@ var HexUploader = function(){
 				.then(waitForNewDeviceToAppear(6000))
 				.then(resolve)
 				.catch(function(){
-					// If the soft trigger desn't work, try the connect/disconnect trigger
 					var rejectMessage = {
 						file: 'HexUploader',
 						step: 'enterBootaloderMode -> trigger',
