@@ -600,7 +600,7 @@ var HexUploader = function(){
 			.then(Utils.log('HEX-UPLOADER: Bootloader soft trigger.', true))
 			.then(bootloaderSoftTrigger)
 			.then(Utils.log('HEX-UPLOADER: Wait device refresh.', true))
-			.then(waitForNewDeviceToAppear(3500))
+			.then(waitForNewDeviceToAppear(6000))
 			.then(resolve)
 			.catch(function(){
 				// If the soft trigger desn't work, try the connect/disconnect trigger
