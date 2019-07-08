@@ -2,8 +2,7 @@
 	"name": "quirkbot-chrome-app",
 	"version": "0.3.3",
 	"description": "Quirkbot Chrome App",
-	"author": "Paulo Barcelos <paulo@quirkbot.com>",
-	"homepage": "https://github.com/Quirkbot/QuirkbotChromeApp",
+	"homepage": "https://github.com/strawbees/quirkbot-chrome-app",
 	"main": "src/index.js",
 	"scripts": {
 		"build": "node build.js",
