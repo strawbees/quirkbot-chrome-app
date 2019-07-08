@@ -491,7 +491,6 @@ var HexUploader = function(){
 	var guaranteeEnterBootaloderMode = function(link){
 		var promise = function(resolve, reject){
 			Utils.run(link)
-			.then(forceDisconnect)
 			.then(Utils.log('HEX-UPLOADER: Making sure the connection is open.', true))
 			.then(ensureOpenConnection(openCommunicationConnection))
 			.then(Utils.log('HEX-UPLOADER: Verifying if Quirkbot is on bootloader mode...', true))
